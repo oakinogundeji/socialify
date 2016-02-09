@@ -1,0 +1,12 @@
+<!--from /views/pages/frontend-->
+
+<!--Main app structure -->
+<%- contentFor('frontend header') %>
+<script src="/socket.io/socket.io.js"></script>
+
+<%- contentFor('frontend body') %>
+<div id="app" class="col-md-9">
+  <router-view></router-view>
+</div>
+
+<script src="js/main.js"></script>

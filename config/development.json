@@ -1,0 +1,7 @@
+{
+  "host": "localhost",
+  "devURL": "http://localhost:3030",
+  "env": "development",
+  "dBURL": "mongodb://localhost/socialify",
+  "sessionSecret": "qwertyuiop123456789"
+}

@@ -1,0 +1,14 @@
+<!--from /views/pages/signup -->
+<h1><span class="fa fa-sign-in"></span> Signup</h1>
+<% if(errMsg) {%>
+  <p class="errMsg"><%- errMsg%></p>
+<%}%>
+<h3>Signup for Socialfiy...!</h3>
+<form action="/signup" method="post">
+  <input type="text" name="fname" placeholder="first name" required>
+  <input type="text" name="lname" placeholder="last name" required>
+  <input type="email" name="email" placeholder="email" required>
+  <input type="password" name="password" placeholder="password" required>
+  <input type="password" name="cpassword" placeholder="confirm password" required>
+  <input class="btn btn-success" type="submit" value="Signup!">
+</form>

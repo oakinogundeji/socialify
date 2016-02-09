@@ -1,0 +1,11 @@
+<!--from /views/pages/login -->
+<h1><span class="fa fa-lock"></span> Login</h1>
+<% if(errMsg) {%>
+  <p class="errMsg"><%- errMsg%></p>
+<%}%>
+<h3>Login with your email and password</h3>
+<form action="/login" method="post">
+  <input type="email" name="email" placeholder="email" required>
+  <input type="password" name="password" placeholder="password" required>
+  <input class="btn btn-success" type="submit" value="Login!">
+</form>
