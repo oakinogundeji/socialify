@@ -1,0 +1,16 @@
+{
+  "host": "localhost",
+  "devURL": "http://localhost:3030",
+  "env": "development",
+  "dBURL": "",
+  "sessionSecret": "qwertyuiop123456789",
+  "S3": {
+    "bucket": "teliossocialify",
+    "key": "AKIAIVHLHQ3R33JHA6AQ",
+    "secret": "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"
+  },
+  "SendGrid": {
+    "username": "telios",
+    "password": "jusankubo123"
+  }
+}
