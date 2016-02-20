@@ -1,0 +1,103 @@
+<section id="app-contacts" class="row">
+  <h1>Contacts</h1>
+  <template v-if="showResultsList">
+    <span v-show="showLoading">Loading...</span>
+    <ul class="list-group">
+      <li v-for="item in resultsList" class="list-group-item">
+        <figure><img :src=item.profilePhoto
+          alt="{{item.firstName}}'s photo'">
+        </figure>
+        <p>{{item.firstName}} {{item.lastName}}</p>
+        <p>{{item.email}}</p>
+        <div><a class="btn btn-success btn-default"
+          @click.stop.prevent="addFriend(item)">Add Friend!</a>
+        </div>
+        <span v-show="showErrMsg">There was an error adding your friend, please try later!</span>
+      </li>
+    </ul>
+  </template>
+  <span v-show="!showFriendsList">You have no friends to show</span>
+  <section>
+    <template v-if="showFriendsList">
+      <h2>Friends list...</h2>
+      <span v-show="showLoading">Loading...</span>
+      <div>
+        <ul class="list-group">
+          <li v-for="item in friendsListArray" class="list-group-item">
+            <figure><img :src=item.profilePhoto
+              alt="{{item.firstName}}'s photo'">
+            </figure>
+            <p>{{item.firstName}} {{item.lastName}}</p>
+            <p>{{item.email}}</p>
+            <div><a class="btn btn-danger btn-default"
+              @click.stop.prevent="deleteFriend(item)">Delete Friend!</a>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <section>
+        <a href="" class="btn btn-info btn-default"
+        @click.stop.prevent="showfriendListSearch">Search your friends list...</a>
+        <div v-show="friendListSearch">
+          <form>
+            <div class="form-group">
+              <label for="first-name">First Name</label>
+              <input type="text" class="form-control" id="first-name"
+              placeholder="e.g. John" v-model="friendSearchFirstName">
+            </div>
+            <div class="form-group">
+              <label for="last-name">Last Name</label>
+              <input class="form-control" type="text" id="last-name" v-model="friendSearchLastName"
+              placeholder="e.g. Doe">
+            </div>
+            <div class="form-group">
+              <label for="friend-email">Email</label>
+              <input class="form-control" type="text" id="friend-email" v-model="friendSearchEmail"
+              placeholder="e.g. john@doe.com">
+            </div>
+            <button type="submit" class="btn btn-success btn-default"
+            @click.stop.prevent="submitFriendsSearch">Search!</button>
+            <button type="submit" class="btn btn-danger btn-default"
+            @click.stop.prevent="discardFriendsSearch">Discard!</button>
+          </form>
+          <span v-show="showFriendsListMsg">{{friendsListMsg}}</span>
+        </div>
+      </section>
+      <span v-show="showFriendsErrMsg">There was an error showing your friends, please try later!</span>
+      <span v-show="showRemoveErrMsg">There was an error removing your friend, please try later!</span>
+    </template>
+  </section>
+  <div>
+    <a class="btn btn-primary btn-default"
+    @click.stop.prevent="doSearch">Search for friends...</a>
+  </div>
+  <div>
+    <a class="btn btn-primary btn-default"
+    @click.stop.prevent="enableFriendsList" v-el:friend-list-btn>Show friends list...</a>
+  </div>
+  <section id="friends-search" v-show="showSearch">
+    <form>
+      <div class="form-group">
+        <label for="first-name">First Name</label>
+        <input type="text" class="form-control" id="first-name"
+        placeholder="e.g. John" v-model="friendFirstName">
+      </div>
+      <div class="form-group">
+        <label for="last-name">Last Name</label>
+        <input class="form-control" type="text" id="last-name" v-model="friendLastName"
+        placeholder="e.g. Doe">
+      </div>
+      <div class="form-group">
+        <label for="friend-email">Email</label>
+        <input class="form-control" type="text" id="friend-email" v-model="friendEmail"
+        placeholder="e.g. john@doe.com">
+      </div>
+      <button type="submit" class="btn btn-success btn-default"
+      @click.stop.prevent="submitSearch">Search!</button>
+      <button type="submit" class="btn btn-danger btn-default"
+      @click.stop.prevent="discardSearch">Discard!</button>
+    </form>
+  </section>
+  <span v-show="showSearchResultMsg" class="infoMsg">Friend search result: {{searchResultMsg}}</span>
+  <span v-show="showErrMsg" class="errMsg">Please create a search or discard the attempt!</span>
+</section>

@@ -10,7 +10,7 @@ var
   logger = require('morgan'),
   bParser = require('body-parser'),
   session = require('express-session'),
-  io = require('./socket/socket'),
+  io = require('./socket/socket').io,
   ejsLayout = require('express-ejs-layouts'),
   mongoose = require('mongoose'),
   mongoStore = require('connect-mongo')(session);
@@ -33,7 +33,8 @@ var
   sessionSecret = config.sessionSecret,
   sessionStore,
   db,
-  baseRoutes = require('./routes/baseroutes');
+  baseRoutes = require('./routes/baseroutes'),
+  userRoutes = require('./routes/userroutes');
 app.locals.errMsg = app.locals.errMsg || null;
 //=============================================================================
 /**
@@ -88,7 +89,7 @@ session and consequently, 'io' can access that user by querying the
 dBase*/
 var sessionMware =  session({
     name: 'socialify.sess', store: sessionStore, secret: sessionSecret, resave: false,
-    saveUninitialized: true, cookie: {maxAge: 1000 * 60 * 15}});
+    saveUninitialized: true, cookie: {maxAge: 1000 * 60 * 60 * 24}});
 /*The following idiom directs 'io' to use the same session midddleware
 as the base express app immediatly after a client has connected. We can do this
 here because the 'io' object is exposed via the 'singleton' pattern
@@ -109,6 +110,7 @@ app.get('/test', function (req, res) {
   return res.status(200).json('All\'s well!!');
 });
 app.use('/', baseRoutes);
+app.use('/users', userRoutes);
 //=============================================================================
 /**
 *Custom Error handler

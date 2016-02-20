@@ -1,0 +1,140 @@
+<section>
+  <section class="row" id="page-meta-data">
+    <h1>Status: {{userPageInfo.pageMetaData.status}}</h1>
+    <a href="" class="btn btn-info btn-default"
+    @click.stop.prevent="editStatus" v-show="chngStatusBtn">Change your status!</a>
+    <div v-show="changeStatus">
+      <form>
+        <div class="form-group">
+          <label for="new-status">New Status</label>
+          <input type="text" class="form-control" id="new-status"
+          placeholder="e.g. Something on my mind" v-model="newStatus" >
+        </div>
+        <button type="submit" class="btn btn-success btn-default"
+        @click.stop.prevent="submitStatus">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default"
+        @click.stop.prevent="discardStatus">Discard!</button>
+      </form>
+    </div>
+    <span v-show="showStatusWarnMsg" class="errMsg">Please change your status or discard the attempt!</span>
+    <span v-show="showStatusSuccessMsg" class="successMsg">Your status was successfully changed!</span>
+    <span v-show="showStatusErrMsg" class="errMsg">There was an error changing your status, please try again!</span>
+    <h2>This is your hub</h2>
+    <p>Your page details are...</p>
+    <div>
+      <ul>
+        <li v-for="value in userPageInfo.pageMetaData">
+          <p>{{$key}}: {{value}}</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+  <section class="row" id="page-posts">
+    <div>
+      <h2>Create a new post...</h2>
+      <a href="" class="btn btn-primary btn-default"
+      @click.stop.prevent="cr8Post">Create post</a>
+    </div>
+    <div v-show="showNewPostForm">
+      <form>
+        <div class="form-group">
+          <label for="new-post-title">Title</label>
+          <input type="text" class="form-control" id="new-post-title"
+          placeholder="Title e.g. My first post" v-model="newPostTitle" lazy>
+        </div>
+        <div class="form-group">
+          <label for="post-content">What's on your mind?</label>
+          <textarea class="form-control" rows="5" id="post-content" v-model="newPostContent" lazy
+          placeholder="Share your thoughts e.g. this is my portal to the world!!!"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="post-img">Upload Images</label>
+          <!--NB 'post-img' is in kebab-case here but is used in camelCase on the
+        component!-->
+          <input type="file" id="post-img" v-el:post-img>
+          <div class="file-upload-progress"></div>
+        </div>
+        <button type="submit" class="btn btn-success btn-default"
+        @click.stop.prevent="submitPost">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default"
+        @click.stop.prevent="discardPost">Discard!</button>
+      </form>
+    </div>
+    <span v-show="showErrMsg" class="errMsg">Please create a post or discard the attempt!</span>
+    <span v-show="showPostSuccessMsg" class="successMsg">Your post was successfully uploaded!</span>
+    <span v-show="showPostErrMsg" class="errMsg">There was an error uploading your post, please try again!</span>
+  </section>
+  <section class="row" id="display-page-posts">
+    <ul v-show="showHubPosts" class="list-group">
+      <li v-for="item in userPageInfo.userPosts" class="list-group-item">
+        <div class="well">
+          <p v-show="item.title">Title: {{item.title}}</p>
+          <p v-show="item.text">Story: {{item.text}}</p>
+          <p v-show="item.img">Image: <figure v-show="item.img"><img :src=item.img alt={{item.title}}'s image'></figure></p>
+          <div class="post-enhancements">
+            <span class="fa fa-comments fa-2x" data-toggle="modal" data-target="#commentsModal"
+              @click="commentDetails(item)"></span>
+            <span class="fa fa-heart fa-2x" @click.stop.prevent="likePost(item)"></span><span>{{item.likes}}</span>
+            <span class="fa fa-share fa-2x" @click.stop.prevent="sharePost"></span>
+            <span class="fa fa-tag fa-2x" @click.stop.prevent="tagFriends"></span>
+          </div>
+          <section id="display-post-comments">
+            <ul>
+              <li v-for="item in item.postsComments">
+                <div class="well">
+                  <p v-show="item.content">Content: {{item.content}}</p>
+                  <span v-show="item.author">Author: {{item.author}}</span>
+                  <span v-show="item.likes">Likes: {{item.likes}}</span>
+                </div>
+                <div class="comment-enhancements">
+                  <span class="fa fa-heart" @click.stop.prevent="likeComment"></span>
+                  <span class="fa fa-share" @click.stop.prevent="shareComment"></span>
+                  <span class="fa fa-tag" @click.stop.prevent="tagComment"></span>
+                </div>
+              </li>
+            </ul>
+          </section>
+          <span v-show="showCommentSuccessMsg">Your comment was successfully submitted!</span>
+          <span v-show="showCommentErrMsg">There was an error submitting your comment, please try later!</span>
+          <span v-show="showLikeErrMsg">There was an error performing the 'like', please try later!</span>
+          <span v-show="showShareSuccessMsg">Your comment was successfully submitted!</span>
+          <span v-show="showShareErrMsg">There was an error submitting your comment, please try later!</span>
+          <span v-show="showTagSuccessMsg">Your comment was successfully submitted!</span>
+          <span v-show="showTagErrMsg">There was an error submitting your comment, please try later!</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <pre>{{$data | json}}</pre>
+</section>
+
+<div class="modal fade" id="commentsModal" tabindex="-1" role="dialog" aria-labelledby="commentsModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="closeModal" data-dismiss="modal" aria-label="Close"
+        @click.prevent><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="commentsModalLabel">Leave a comment...</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="post-comment">What do you think about this post?</label>
+            <textarea class="form-control" rows="5" id="post-comment" v-model="newPostComment"
+            placeholder="Share your thoughts e.g. Excellent post..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <div>
+          <span v-show="showCommentsWarning">Please make a comment or discard the action!</span>
+        </div>
+        <button type="submit" class="btn btn-success btn-default" data-dismiss="modal"
+        @click.stop.prevent="submitComment">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default" data-dismiss="modal"
+        @click.stop.prevent="discardComment">Discard!</button>
+      </div>
+    </div>
+  </div>
+</div>

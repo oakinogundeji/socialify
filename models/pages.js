@@ -3,7 +3,9 @@
 *Module dependencies
 */
 //-----------------------------------------------------------------------------
-var mongoose = require('mongoose');
+var
+  mongoose = require('mongoose');
+  //autopopulate = require('mongoose-autopopulate');
 //=============================================================================
 /**
 *Pages schema
@@ -11,21 +13,32 @@ var mongoose = require('mongoose');
 //-----------------------------------------------------------------------------
 var PagesSchema = mongoose.Schema({
   owner: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
     required: true,
-    unique: true
+    ref: 'User'
   },
   title: {
     type: String,
     required: true
   },
   description: String,
+  posts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Posts'
+  }],
   createdOn: {
     type: Date,
     default: Date.now,
     required: true
     }
   });
+//=============================================================================
+/**
+*Declare Schema plugins
+*/
+//-----------------------------------------------------------------------------
+//PagesSchema.plugin(autopopulate);
+//=============================================================================
 //=============================================================================
 /**
 *Create Pages model

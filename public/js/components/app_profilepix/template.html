@@ -1,0 +1,16 @@
+<section>
+    <template v-if="showInput">
+      <h1>Upload your profile photo</h1>
+      <div class="form-group">
+        <label for="profile-photo">Profile Photo</label>
+        <!--NB 'user-pix' is in kebab-case here but is used in camelCase on the
+      component!-->
+        <input type="file" id="profile-photo" v-el:user-pix>
+        <div v-show="showUpload" class="file-upload-progress"></div>
+        <button type="submit" class="btn btn-success btn-default"
+        @click.stop.prevent="uploadPix">Upload</button>
+      </div>
+      <span v-show="showErrMsg">Please select a profile photo</span>
+      <pre>{{$data | json}}</pre>
+    </template>
+</section>

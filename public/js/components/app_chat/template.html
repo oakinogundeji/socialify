@@ -1,0 +1,31 @@
+<section id="app-chat" class="row">
+  <div id="chat-address-bar">
+    <h1>{{userProfileInfo.fname}} {{userProfileInfo.lname}}: {{userProfileInfo.email}} / {{chatTarget}}</h1>
+    <span class="badge">12</span>
+  </div>
+  <div id="chat-box">
+    <div id="chat-box-display">
+      <div v-for="item in chatMsgs">
+        <p>{{item.from}}: {{item.msg}}</p>
+      </div>
+    </div>
+    <form id="chat-box-input" class="form-group"
+    @submit.stop.prevent="sendChatMsg">
+      <input type="text" v-model="newMsg" class="form-control">
+      <input class="btn btn-success btn-default" value="Send!" type="button"
+      @click.stop.prevent="sendChatMsg">
+      <input class="btn btn-danger btn-default" value="Discard!" type="button"
+      @click.stop.prevent="discardChatMsg">
+    </form>
+    <span v-show="showWarnMsg" class="errMsg">Please choose a recipient or discard the message!</span>
+  </div>
+  <div id="chat-status-box">
+    <div id="chat-notifications"></div>
+    <div id="chat-online-friends">
+      <div v-for="item in onlineFriends">
+        <a href="" @click.stop.prevent="setChatTarget(item)"><p>{{item.firstName}} {{item.lastName}}: {{item.email}}</p></a>
+      </div>
+    </div>
+  </div>
+  <!--<pre>{{$data | json}}</pre>-->
+</section>

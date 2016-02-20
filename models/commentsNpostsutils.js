@@ -60,8 +60,8 @@ function viewAllPostsForUser(req, res, user, next) {
   });*/
 }
 
-function getAllPostsForUser(req) {
-  var query = PostsModel.findOne({owner: req.user.emal}).sort('-modifiedOn').
+function getAllPostsForUser(ID) {
+  var query = PostsModel.findOne({owner: ID}).sort('-modifiedOn').
     exec(function (err, posts) {
       if(err) {
         throw(err);

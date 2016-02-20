@@ -1,0 +1,97 @@
+<section id="app-profile" class="row">
+  <template v-if="showWelcome">
+    <section>
+      <h1>Hi, <span>it looks like this is your very first time of using Socialify</span></h1>
+      <p>To get started your're going to need to do a couple of things...</p>
+      <ul>
+        <li>Create your Hub page</li>
+        <li>Write your first Status update</li>
+        <li>Create a password recovery email address</li>
+        <li>Upload a profile photo</li>
+      </ul>
+      <a href="" class="btn btn-primary btn-default"
+      @click.stop.prevent="getStarted">Get started now!</a>
+    </section>
+  </template>
+
+  <template v-if="showProfileInfo">
+    <div>
+      <h1>Welcome {{fullname}}, this is your Socialify profile</h1>
+      <section>
+        <h2>Profile Details</h2>
+        <ul>
+          <li>First Name: {{fname}}</li>
+          <li>Last Name: {{lname}}</li>
+          <li>Email address: {{email}}</li>
+        </ul>
+      </section>
+      <figure><img :src=userProfileInfo.photo alt="{{fname}}'s profile photo"></figure>
+    </div>
+    <a href="" class="btn btn-warning btn-default"
+    @click.stop.prevent="editProfile" v-show="showProfileEditBtn">Edit profile details...</a>
+    <section v-show="showEdit">
+      <h2>Edit your profile information</h2>
+      <div>
+        <form>
+          <div class="form-group">
+            <label for="first-name">First Name</label>
+            <input type="text" class="form-control" id="first-name"
+            placeholder="e.g. John" v-model="editFname">
+          </div>
+          <div class="form-group">
+            <label for="last-name">Last Name</label>
+            <input class="form-control" type="text" id="last-name" v-model="editLname"
+            placeholder="e.g. Doe">
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input class="form-control" type="email" id="email" v-model="editEmail"
+            placeholder="e.g. john@doe.com">
+          </div>
+          <div class="form-group">
+            <label for="profile-photo">Profile Photo</label>
+            <!--NB 'user-pix' is in kebab-case here but is used in camelCase on the
+          component!-->
+            <input type="file" id="profile-photo" v-el:new-user-pix>
+            <div v-show="showUpload" class="file-upload-progress"></div>
+          </div>
+          <button type="submit" class="btn btn-success btn-default"
+          @click.stop.prevent="submitEdit">Done!</button>
+          <button type="submit" class="btn btn-danger btn-default"
+          @click.stop.prevent="discardEdit">Discard!</button>
+        </form>
+        <span v-show="showErrMsg">There was an error saving the edits, please try later!</span>
+      </div>
+    </section>
+    <a href="" class="btn btn-danger btn-default" @click.stop.prevent="editPwd"
+     v-show="showPwdEditBtn">Change your password</a>
+    <section v-show="showPwdChange">
+      <h2>Change your password</h2>
+      <div>
+        <form>
+          <div class="form-group">
+            <label for="first-name">Current Password</label>
+            <input type="password" class="form-control" id="current-password" v-model="currentPwd">
+          </div>
+          <div class="form-group">
+            <label for="last-name">New Password</label>
+            <input class="form-control" type="password" id="new-password" v-model="newPwd">
+          </div>
+          <div class="form-group">
+            <label for="email">Confirm New Password</label>
+            <input class="form-control" type="password" id="confirm-new-password"
+            v-model="confirmNewPwd">
+          </div>
+          <button type="submit" class="btn btn-success btn-default"
+          @click.stop.prevent="submitPwdChange">Done!</button>
+          <button type="submit" class="btn btn-danger btn-default"
+          @click.stop.prevent="discardPwdChange">Discard!</button>
+        </form>
+        <span v-show="showPwdErrMsg">There was an error changing your password, please try later!</span>
+        <span v-show="showPwdChngErrMsg">Please fill all the fields with valid data or discard the attempt!</span>
+      </div>
+    </section>
+    <pre>{{$data | json}}</pre>
+  </template>
+  <router-view :user-email="email"></router-view>
+</section>

@@ -3,7 +3,9 @@
 *Module dependencies
 */
 //-----------------------------------------------------------------------------
-var mongoose = require('mongoose');
+var
+  mongoose = require('mongoose');
+  //autopopulate = require('mongoose-autopopulate');
 //=============================================================================
 /**
 *Comments schema
@@ -11,14 +13,27 @@ var mongoose = require('mongoose');
 //-----------------------------------------------------------------------------
 var CommentsSchema = mongoose.Schema({
   forPost: {
+    title: {
+      type: String,
+      ref: 'Posts',
+      required: true
+    },
+    owner: {
+      type: String,
+      required: true
+    },
+    postID: {
+      type: String,
+      required: true
+    }
+  },
+  commentID: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   author: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
   content: String,
   createdOn: {
@@ -31,6 +46,13 @@ var CommentsSchema = mongoose.Schema({
     default: 0
   }
 });
+//=============================================================================
+/**
+*Declare Schema plugins
+*/
+//-----------------------------------------------------------------------------
+//CommentsSchema.plugin(autopopulate);
+//=============================================================================
 //=============================================================================
 /**
 *Create Comments model

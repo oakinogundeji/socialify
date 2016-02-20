@@ -5,6 +5,7 @@
 //-----------------------------------------------------------------------------
 var
   mongoose = require('mongoose'),
+  //autopopulate = require('mongoose-autopopulate'),
   paginate = require('mongoose-paginate');
 //=============================================================================
 /**
@@ -12,10 +13,18 @@ var
 */
 //-----------------------------------------------------------------------------
 var PostsSchema = mongoose.Schema({
+  forPage: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Pages'
+  },
   owner: {
     type: String,
-    required: true,
-    unique: true
+    required: true
+  },
+  postID: {
+    type: String,
+    required: true
   },
   content: {
     title: {
@@ -23,11 +32,12 @@ var PostsSchema = mongoose.Schema({
       required: true
     },
     text: String,
-    media: {
-      filename: String,
-      mediaType: String
-    }
+    img: String
   },
+  comments: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Comments'
+  }],
   createdOn: {
     type: Date,
     default: Date.now,
@@ -51,6 +61,7 @@ var PostsSchema = mongoose.Schema({
 //-----------------------------------------------------------------------------
 /*PostsSchema.plugin(mongoosePaginate);
 we'll include pagination after everything works ok*/
+//PostsSchema.plugin(autopopulate);
 //=============================================================================
 /**
 *Create Posts model

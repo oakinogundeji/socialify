@@ -1,9 +1,17 @@
 <div id="baseApp" class="container-fluid">
   <div class="row">
-    <app-nav></app-nav>
+    <app-nav :has-page="userMetaData.profileInfo.hasPage"></app-nav>
   </div>
   <div class="row">
-    <app-contact-list></app-contact-list>
+    <app-contact-list :has-friends="userMetaData.profileInfo.hasFriends"
+      :friends-list="userMetaData.profileInfo.friendsList">
+    </app-contact-list>
   </div>
-  <router-view></router-view>
+  <!--note how we use kebab case to define the prop we want to pass to the
+router-view rather than camel case; in the child component, the prop is identified via camelcase-->
+  <router-view :user-profile-info="userMetaData.profileInfo"></router-view>
+  <div class="row">
+    <app-chat :user-profile-info="userMetaData.profileInfo"></app-chat>
+  </div>
+  <pre>{{$data | json}}</pre>
 </div>

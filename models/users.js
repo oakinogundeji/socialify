@@ -6,6 +6,7 @@
 var
   mongoose = require('mongoose'),
   paginate = require('mongoose-paginate'),
+  //autopopulate = require('mongoose-autopopulate'),
   bcrypt = require('bcrypt-nodejs');
 //=============================================================================
 /**
@@ -13,14 +14,12 @@ var
 */
 //-----------------------------------------------------------------------------
 var UserSchema = mongoose.Schema({
-    first_name: {
+    firstName: {
       type: String,
-      unique: true,
       required: true
       },
-    last_name: {
+    lastName: {
         type: String,
-        unique: true,
         required: true
       },
     email: {
@@ -28,12 +27,14 @@ var UserSchema = mongoose.Schema({
       unique: true,
       required: true
       },
+    pwdRecoveryEmail: {
+      type: String
+    },
     password: {
       type: String,
-      unique: true,
       required: true
     },
-    profile_photo: {
+    profilePhoto: {
       type: String
     },
     joined: {
@@ -44,7 +45,27 @@ var UserSchema = mongoose.Schema({
     status: {
       type: String
     },
-    friends: [String]
+    friends: [String],
+    pageID: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Pages'
+    },
+    hasPage: {
+      type: Boolean,
+      default: false
+    },
+    hasPosts: {
+      type: Boolean,
+      default: false
+    },
+    hasComments: {
+      type: Boolean,
+      default: false
+    },
+    hasFriends: {
+      type: Boolean,
+      default: false
+    }
   });
 //=============================================================================
 /**
@@ -60,11 +81,12 @@ UserSchema.methods.validPassword = function(password) {
 };
 //=============================================================================
 /**
-*Declare Schema pagination plugin
+*Declare Schema plugins
 */
 //-----------------------------------------------------------------------------
 /*UserSchema.plugin(mongoosePaginate);
 we'll include pagination after everything works ok*/
+//UserSchema.plugin(autopopulate);
 //=============================================================================
 /**
 *Create user model

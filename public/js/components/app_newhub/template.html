@@ -1,0 +1,32 @@
+<section>
+  <template v-if="showForm">
+    <h1>Create your Hub</h1>
+    <div>
+      <form>
+        <div class="form-group">
+          <label for="hubTile">Title</label>
+          <input type="text" class="form-control" id="hubMetaData"
+          placeholder="Title e.g. My awesome page" v-model="hubTitle" lazy>
+        </div>
+        <div class="form-group">
+          <label for="hubDescription">Description</label>
+          <textarea class="form-control" rows="5" id="hubDescription" v-model="hubDescription" lazy
+          placeholder="Briefly describe your new hub e.g. this is my portal to the world!!!"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="userStatus">Status</label>
+          <input type="text" class="form-control" id="userStatus" v-model="userStatus" lazy
+          placeholder="e.g. Socialify rockzxxx!!">
+        </div>
+        <div class="form-group">
+          <label for="hubPwdRecovery">Password recovery email account</label>
+          <input type="email" class="form-control" id="hubPwdRecovery"
+          placeholder="another@email.com" v-model="pwdRecoveryEmail" lazy>
+        </div>
+        <button type="submit" class="btn btn-success btn-default"
+        @click.stop.prevent="submitData">Submit</button>
+      </form>
+    </div>
+    <span v-show="showErrMsg">Please provide valid data for all form fields</span>
+  </template>
+</section>

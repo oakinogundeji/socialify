@@ -56,13 +56,15 @@ passport.use('local-signup', new LocalStrategy({
         }
         else {
             var newUser = new User();
-            newUser.first_name = req.body.fname;
-            newUser.last_name = req.body.lname;
+            newUser.firstName = req.body.fname;
+            newUser.lastName = req.body.lname;
             newUser.email = email;
+            newUser.pwdRecoveryEmail = '';
             newUser.status = '';
-            newUser.profile_photo = '';
+            newUser.profilePhoto = '';
+            newUser.pageID = null;//necessary to allow pageID to be later set as an ObjectId
             newUser.password = newUser.generateHash(password);
-            newUser.save(function(err) {
+            newUser.save(function(err, user) {
               if(err) {
                 if(err.message == 'User validation failed') {
                   return done(null, false, {errMsg: 'Please fill all fields'});
@@ -70,8 +72,8 @@ passport.use('local-signup', new LocalStrategy({
                 console.error(err);
                 return done(err);
                 }
-                console.log('new user successfully created', newUser);
-              return done(null, newUser);
+                console.log('new user successfully created', user);
+              return done(null, user);
             });
           }
       });

@@ -6,9 +6,10 @@
 var
   express = require('express'),
   passport = require('../config/passport'),
-  UserUtils = require('../models/userutils'),
-  PageUtils = require('../models/pageutils'),
-  commentsNpostsUtils = require('../models/commentsNpostsutils');
+  nodemailer = require('nodemailer'),
+  sgTransport = require('nodemailer-sendgrid-transport'),
+  config = require('../config/config'),
+  UserModel = require('../models/users');
 //==============================================================================
 /**
 *Create Router instance
@@ -22,8 +23,24 @@ var router = express.Router();
 //-----------------------------------------------------------------------------
 var
   isLoggedIn = require('../utils/isLoggedIn'),
-  findPageByUser = PageUtils.findPageByUser,
-  getAllPostsForUser = commentsNpostsUtils.getAllPostsForUser;
+  sgtOptions = {
+    auth: {
+        api_user: config.SendGrid.username,
+        api_key: config.SendGrid.password
+      }
+    },
+  mailer = nodemailer.createTransport(sgTransport(sgtOptions));
+function generateRandomPwd() {
+  var
+    date = new Date().getTime(),
+    xterBank = 'abcdefghijklmnopqrstuvwxyz',
+    fstring = '',
+    i;
+  for(i = 0; i < 15; i++) {
+    fstring += xterBank[parseInt(Math.random()*26)];
+  }
+  return (fstring += date);
+}
 //=============================================================================
 /**
 *Middleware
@@ -85,19 +102,20 @@ router.route('/signup').
   });
 //---------------------------Frontend routes-----------------------------------
 router.get('/frontend', isLoggedIn, function (req, res) {
-  /*var
+  var
     user = req.user,
     userdata = {
-      fname: user.first_name,
-      lname: user.last_name,
+      fname: user.firstName,
+      lname: user.lastName,
       email: user.email,
-      photo: user.profilePhoto || null,
-      status: user.status || null,
-      friends: user.friends || null
-    };*/
+      photo: user.profilePhoto,
+      status: user.status,
+      hasPage: user.hasPage,
+      hasFriends: user.hasFriends
+    };
+  console.log('user data sent to frntend on login', userdata);
 
-  //return res.status(200).render('pages/frontend', {userdata: userdata});
-  return res.status(200).render('pages/frontend');
+  return res.status(200).render('pages/frontend', {userdata: userdata});
 });
 //---------------------------Logout route--------------------------------------
 router.get('/logout', function (req, res) {
@@ -105,6 +123,48 @@ router.get('/logout', function (req, res) {
   req.session.destroy();
   return res.redirect('/');
 });
+//---------------------------reset password route------------------------------
+router.route('/recoverpwd').
+  get(function (req, res) {
+    return res.status(200).render('pages/resetpwd');
+  }).
+  post(function (req, res) {
+    console.log('reset pwd req received from user', req.body);
+    UserModel.findOne({firstName: req.body.fname,
+    lastName: req.body.lname, email: req.body.email}, function (err, user) {
+      if(err) {
+        throw(err);
+      }
+      if(!user) {
+        var errMsg = 'Invalid credentials, please confirm your data!';
+        return res.status(409).render('pages/resetpwd', {errMsg: errMsg})
+      }
+      var
+        pwdRecoveryEmail = user.pwdRecoveryEmail,
+        newPwd = generateRandomPwd(),
+        email = {
+          to: pwdRecoveryEmail,
+          from: 'support@socialify.net',
+          subject: 'Password Recovery',
+          text: 'Your new password is ' + newPwd +' we suggest you change it on next login'
+        };
+        mailer.sendMail(email, function(err, res) {
+          if(err) {
+              console.log(err)
+          }
+          console.log(res);
+        });
+        console.log('old user pwd from pwd reset', user.password);
+        user.password = user.generateHash(newPwd);
+        user.save(function (err, user) {
+          if(err) {
+            throw(err);
+          }
+          console.log('new user pwd from pwd reset', user.password);
+          return res.status(302).redirect('/login');
+        });
+    });
+  });
 //=============================================================================
 /**
 *Export Module

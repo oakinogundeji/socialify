@@ -1,0 +1,12 @@
+<!--from /views/pages/resetpwd -->
+<h1><span class="fa fa-wrench"></span> Reset your password!</h1>
+<p><span class="fa fa-info"></span> Your First name, last name and email MUST match the stored records!</p>
+<% if(errMsg) {%>
+  <p class="errMsg"><%- errMsg%></p>
+<%}%>
+<form action="/recoverpwd" method="post">
+  <input type="text" name="fname" placeholder="first name" required>
+  <input type="text" name="lname" placeholder="last name" required>
+  <input type="email" name="email" placeholder="email" required>
+  <input class="btn btn-success btn-default" type="submit" value="Recover password!">
+</form>
