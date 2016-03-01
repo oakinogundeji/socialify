@@ -16,7 +16,6 @@ var
   PageModel = require('../models/pages'),
   PostsModel = require('../models/posts'),
   CommentsModel = require('../models/comments'),
-  commentsNpostsUtils = require('../models/commentsNpostsutils'),
   config = require('../config/config');
 //==============================================================================
 /**
@@ -132,14 +131,11 @@ router.post('/newpage/:email', isLoggedIn, function (req, res) {
         console.log('user page data has been updated', results);
         return res.status(200).json('OK!');
       }
-      return res.status(500).render('pages/error');
+      return res.status(500).render('pages/errors');
     });
 });
 //---------------------------Newuser profile photo creation routes-------------
 router.post('/profilepix/:email', isLoggedIn, function (req, res) {
-  /*console.log('the connected user ID from profile photo', ID);
-  console.log('the connected user socket from profile photo', socket);*/
-  //return res.status(200).json('OK!');
 //The following declares required variables
   var
     //ID = req.user._id,
@@ -181,11 +177,13 @@ router.post('/profilepix/:email', isLoggedIn, function (req, res) {
               //store the filename as value of user pix on mongoDB
               UserModel.findOne({_id: req.user._id}, function (err, user) {
                 if(err) {
+                  console.error(err);
                   throw(err);
                 }
                 user.profilePhoto = S3PhotoPrefix + fileName;
                 user.save(function (err) {
                   if(err) {
+                    console.error(err);
                     throw(err)
                   }
                   console.log('user profile photo', user.profilePhoto);
@@ -205,6 +203,7 @@ router.post('/profilepix/:email', isLoggedIn, function (req, res) {
                   //delete server copy of uploaded file
                   fs.unlink(newFile, function (err) {
                     if(err) {
+                      console.error(err);
                       throw(err)
                     }
                     return console.log('local copy of ' + newFile +' has been deleted')
@@ -214,6 +213,10 @@ router.post('/profilepix/:email', isLoggedIn, function (req, res) {
             }//end of 'if(S3res.statusCode == 200)'
 //............................................................................//
           });//end of 'S3Req.on('response')'
+          S3Req.on('error', function (err) {
+            console.error(err);
+            //throw(err);
+          });
           S3Req.end(buff);//ends knox connection to S3
         });//end of 'fs.readFile(newFile)'
       });//end of 'gm(newFile)'
@@ -233,7 +236,8 @@ router.post('/posts/newposts', function (req, res) {
     text = postData.text,
     img = postData.img,//required in order to have a reference when an img needs to be uploaded
     newPost,
-    postID;
+    postID,
+    newPostID;
   controlFlow.series([
     function (cb) {
       newPost = new PostsModel();
@@ -247,9 +251,11 @@ router.post('/posts/newposts', function (req, res) {
       newPost.postID = generateRandomPageID();
       newPost.save(function (err, post) {
         if(err) {
+          console.error(err);
           cb(err);
         }
         req.user.hasPosts = req.user.hasPosts || true;
+        newPostID = post.postID;
         postID = post._id;
         console.log('new post data successfully created', post);
         return cb(null, post);
@@ -258,12 +264,14 @@ router.post('/posts/newposts', function (req, res) {
     function (cb) {
       PageModel.findOne({owner: req.user._id}, function (err, page) {
         if(err) {
+          console.error(err);
           return cb(err);
         }
         console.log('initial posts for page', page.posts);
-        page.posts.push(postID);
+        page.posts.unshift(postID);
         page.save(function (err, page) {
           if(err) {
+            console.error(err);
             return cb(err);
           }
           console.log('updated posts for page', page);
@@ -273,9 +281,9 @@ router.post('/posts/newposts', function (req, res) {
   }], function (err, results) {
     if(results) {
       console.log('user page has been updated with posts data', results);
-      return res.status(200).json('OK!');
+      return res.status(200).json(newPostID);
     }
-    return res.status(500).render('pages/error');
+    return res.status(500).render('pages/errors');
   });
 });
 //---------------------------user post image route-----------------------------
@@ -331,6 +339,7 @@ router.post('/posts/newposts/:title/imgs', function (req, res) {
                 post.content.img = S3PhotoPrefix + fileName;
                 post.save(function (err, post) {
                   if(err) {
+                    console.error(err);
                     throw(err)
                   }
                   console.log('post with title ' +  postTitle +' and img ' + imgName +' has been saved');
@@ -338,6 +347,7 @@ router.post('/posts/newposts/:title/imgs', function (req, res) {
                   PostsModel.find({owner: req.user.email}).sort('-modifiedOn').
                     exec(function (err, posts) {
                       if(err) {
+                        console.error(err);
                         throw(err);
                       }
                       if(posts.length < 1) {
@@ -358,6 +368,7 @@ router.post('/posts/newposts/:title/imgs', function (req, res) {
                   //delete server copy of uploaded file
                   fs.unlink(newFile, function (err) {
                     if(err) {
+                      console.error(err);
                       throw(err)
                     }
                     return console.log('local copy of ' + newFile +' has been deleted')
@@ -399,6 +410,7 @@ router.get('/list', function (req, res) {
     console.log('users that match search1', users);
     console.log('length of users arr', users.length);
     if(err) {
+      console.error(err);
       throw(err);
     }
     if(users.length === 0) {
@@ -493,7 +505,7 @@ router.route('/friends').
               };
             console.log('updated user data', data);
             socket.emit('updatedUserProfile');
-            return cb();
+            return cb(null, data);
           });
         });
       },
@@ -506,12 +518,83 @@ router.route('/friends').
           console.log('initial friend friends list', friend.friends);
           friend.hasFriends = friend.hasFriends || true;
           friend.friends.push(userEmail);
-          friend.save(function (err) {
+          friend.save(function (err, user) {
             if(err) {
               console.error(err);
               return cb(err);
             }
-            console.log('updated friends friend lsit', friend.friends);
+            var
+              ID = user._id,
+              socket = userSockets[ID];
+            console.log('updated friends friend lsit', user.friends);
+            if(socket) {
+              socket.emit('updatedUserProfile');
+            }
+            return cb();
+          });
+        });
+    }], function (err, results) {
+      if(results) {
+        console.log('results of adding a friend', results);
+        return res.status(200).json('OK!');
+      }
+      return res.status(500).render('pages/errors');
+    });//end of control flow parallel
+  }).
+  delete(function (req, res) {
+    console.log('delete friend request from frontend', req.body);
+    var
+      userEmail = req.user.email,
+      friendEmail = req.body.email;
+    controlFlow.parallel([
+      function (cb) {
+        UserModel.findOne({_id: req.user._id}, function (err, user) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          console.log('initial user friends list', user.friends);
+          var indx = user.friends.indexOf(friendEmail);
+          user.friends.splice(indx, 1);
+          if(user.friends.length < 1) {
+            user.hasFriends = false;
+          }
+          user.save(function (err) {
+            if(err) {
+              console.error(err);
+              return cb(err);
+            }
+            console.log('updated user friends list', user.friends);
+            var socket = getSocket(req);
+            socket.emit('updatedUserProfile');
+            return cb();
+          });
+        });
+      },
+      function (cb) {
+        UserModel.findOne({email: friendEmail}, function (err, friend) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          console.log('initial friend friends list', friend.friends);
+          var indx = friend.friends.indexOf(userEmail);
+          friend.friends.splice(indx, 1);
+          if(friend.friends.length < 1) {
+            friend.hasFriends = false;
+          }
+          friend.save(function (err, user) {
+            if(err) {
+              console.error(err);
+              return cb(err);
+            }
+            var
+              ID = user._id,
+              socket = userSockets[ID];
+            console.log('updated friends friend lsit', user.friends);
+            if(socket) {
+              socket.emit('updatedUserProfile');
+            }
             return cb();
           });
         });
@@ -519,31 +602,7 @@ router.route('/friends').
       if(results) {
         return res.status(200).json('OK!');
       }
-      return res.status(500).render('pages/error');
-    });
-  }).
-  delete(function (req, res) {
-    console.log('delete friend request from frontend', req.body);
-    var friendEmail = req.body.email;
-    UserModel.findOne({_id: req.user._id}, function (err, user) {
-      if(err) {
-        throw(err);
-      }
-      console.log('initial friends list', user.friends);
-      var indx = user.friends.indexOf(friendEmail);
-      user.friends.splice(indx, 1);
-      if(user.friends.length < 1) {
-        user.hasFriends = false;
-      }
-      user.save(function () {
-        if(err) {
-          throw(err);
-        }
-        var socket = getSocket(req);
-        console.log('final friends list', user.friends);
-        socket.emit('updatedUserProfile');
-        return res.status(200).json('Friend deleted!');
-      });
+      return res.status(500).render('pages/errors');
     });
   });
 //---------------------------Edit profile info routes--------------------------
@@ -551,6 +610,7 @@ router.post('/:email/edit', function (req, res) {
   console.log('user edit data received', req.body);
   UserModel.findOne({_id: req.user._id}, function (err, user) {
     if(err) {
+      console.error(err);
       throw(err);
     }
     console.log('original user data from edit profile', user);
@@ -559,6 +619,7 @@ router.post('/:email/edit', function (req, res) {
     user.email = req.body.email || user.email;
     user.save(function (err) {
       if(err) {
+        console.error(err);
         throw(err);
       }
       var socket = getSocket(req);
@@ -573,12 +634,14 @@ router.post('/:email/changepwd', function (req, res) {
   console.log('pwd chanhge request from frontend', req.body);
   UserModel.findOne({_id: req.user._id}, function (err, user) {
     if(err) {
+      console.error(err);
       throw(err);
     }
     console.log('old pwd', user.password);
     user.password = user.generateHash(req.body.newPwd);
     user.save(function (err) {
       if(err) {
+        console.error(err);
         throw(err);
       }
       console.log('new pwd', user.password);
@@ -587,32 +650,327 @@ router.post('/:email/changepwd', function (req, res) {
   });
 });
 //---------------------------User status change route--------------------------
-router.post('/status', function (req, res) {
-  console.log('status change frm client', req.body);
-  UserModel.findOne({_id: req.user._id}, function (err, user) {
-    if(err) {
-      throw(err);
-    }
-    console.log('old status', user.status);
-    user.status = req.body.status;
-    user.save(function (err) {
+router.route('/status').
+  get(function (req, res) {
+    console.log('friends status query received from frontend', req.query);
+    var friendEmail = req.query.email;
+    UserModel.findOne({email: friendEmail}, function (err, user) {
       if(err) {
+        console.error(err);
         throw(err);
       }
-      console.log('new status', user.status);
+      if(user) {
+        console.log('successfully retrieved the requested status', user.status);
+        return res.status(200).json(user.status);
+      }
+      return res.status(500).render('pages/errors');
+    });
+  }).
+  post(function (req, res) {
+    console.log('status change frm client', req.body);
+    UserModel.findOne({_id: req.user._id}, function (err, user) {
+      if(err) {
+        console.error(err);
+        throw(err);
+      }
+      console.log('old status', user.status);
+      user.status = req.body.status;
+      user.save(function (err) {
+        if(err) {
+          console.error(err);
+          throw(err);
+        }
+        console.log('new status', user.status);
+        return res.status(200).json('OK!');
+      });
+    });
+  });
+//---------------------------User comments posting route-----------------------
+router.route('/posts/comments').
+  get(function (req, res) {
+    console.log('get liked comment req for comment', req.query);
+    var
+      postID = req.query.postID,
+      commentID = req.query.commentID;
+    controlFlow.parallel([
+      function (cb) {
+        PostsModel.findOne({postID: postID}, function (err, post) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          var data = {
+            title: post.content.title,
+            text: post.content.text || null,
+            img: post.content.img || null,
+            postID: post.postID,
+            likes: post.likes
+          };
+          return cb(null, data);
+        });
+      },
+      function (cb) {
+        CommentsModel.findOne({commentID: commentID}, function (err, comment) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          var data = {
+            author: comment.author,
+            text: comment.content || null,
+            commentID: comment.commentID,
+            likes: comment.likes
+          };
+          return cb(null, data);
+        });
+    }], function (err, results) {
+      if(results) {
+        console.log('got post and comments as requested', results);
+        var
+          post = results[0],
+          comments = results[1];
+        return res.status(200).json({
+          post: post,
+          comments: comments
+        });
+      }
+      return res.status(500).render('pages/errors');
+    });
+  }).
+  post(function (req, res) {
+    console.log('comments data received from frontend', req.body);
+    //return res.status(200).json('OK!');
+    var
+      newComment,
+      commentID,
+      newCommentID;
+    controlFlow.series([
+      function (cb) {
+        newComment = new CommentsModel();
+        newComment.forPost.title = req.body.data.postTitle;
+        newComment.forPost.owner = req.body.data.postOwner;
+        newComment.forPost.postID = req.body.data.postID;
+        newComment.commentID = generateRandomPageID();
+        newComment.author = req.body.data.author;
+        newComment.content = req.body.data.comment;
+        newComment.save(function (err, comment) {
+          if(err) {
+            console.error(err);
+            cb(err);
+          }
+          console.log('new comment successfully saved', comment);
+          req.user.hasComments = req.user.hasComments || true;
+          commentID = comment._id;
+          newCommentID = comment.commentID;
+          console.log('new comments data successfully created', comment);
+          return cb(null, comment);
+        });
+      },
+      function (cb) {
+        PostsModel.findOne({postID: req.body.data.postID}, function (err, post) {
+            console.log('returned post obj', post);
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          //console.log('initial comments for post', post.comments);
+          post.comments.unshift(commentID);
+          post.save(function (err, dpost) {
+            if(err) {
+              console.error(err);
+              return cb(err);
+            }
+            console.log('updated comments for post', dpost);
+            return cb(null, dpost);
+          });
+        });
+    }], function (err, results) {
+      if(results) {
+        console.log('user post has been updated with comments data', results);
+        return res.status(200).json(newCommentID);
+      }
+      return res.status(500).render('pages/errors');
+    });//end controlflow series
+  });
+//---------------------------posts like routes---------------------------------
+router.post('/posts/:postID/likes', function (req, res) {
+  var postID = req.params.postID;
+  console.log('add 1 like to post with postID', postID);
+  PostsModel.findOne({postID: postID}, function (err, post) {
+    if(err) {
+      console.error(err);
+      throw(err);
+    }
+    console.log('initial val of likes', post.likes);
+    post.likes += 1;
+    post.save(function (err, dpost) {
+      if(err) {
+        console.error(err);
+        throw(err);
+      }
+      console.log('updated likes count', post.likes);
       return res.status(200).json('OK!');
     });
   });
 });
-//---------------------------User comments posting route-----------------------
-router.post('/posts/comments', function (req, res) {
-  console.log('comments data received from frontend', req.body);
-  //return res.status(200).json('OK!');
+//---------------------------comments likes route------------------------------
+router.post('/posts/comments/:commentID/likes', function (req, res) {
+  console.log('increase comment likes request for', req.params.commentID);
+  var commentID = req.params.commentID;
+  console.log('add 1 like to comment with commentID', commentID);
+  CommentsModel.findOne({commentID: commentID}, function (err, comment) {
+    if(err) {
+      console.error(err);
+      throw(err);
+    }
+    console.log('initial val of likes', comment.likes);
+    comment.likes += 1;
+    comment.save(function (err, dcomment) {
+      if(err) {
+        console.error(err);
+        throw(err);
+      }
+      console.log('updated likes count', comment.likes);
+      return res.status(200).json('OK!');
+    });
+  });
+});
+//---------------------------tag friends route---------------------------------
+router.route('/posts/:postID/tag').
+  get(function (req, res) {
+    console.log('get tagged friends request for post', req.params.postID);
+    PostsModel.findOne({postID: req.params.postID}, function (err, post) {
+      if(err) {
+        console.error(err);
+        throw(err);
+      }
+      console.log('suddessfully retrieved the requested post', post.postID);
+      var data = {
+        title: post.content.title,
+        text: post.content.text || null,
+        img: post.content.img || null,
+        postID: post.postID,
+        likes: post.likes
+      };
+      console.log('data sent to frontend is',data);
+      return res.status(200).json(data);
+    });
+  }).
+  post(function (req, res) {
+    console.log('friends to be tagged for postID ' + req.params.postID +' are ' + req.body.taggedFriendsList);
+    console.log('the list is an array', Array.isArray(req.body.taggedFriendsList));
+    var
+      postID = req.params.postID,
+      taggedFriendsList = req.body.taggedFriendsList;
+    PostsModel.findOne({postID: postID}, function (err, post) {
+      if(err) {
+        console.error(err);
+        throw(err);
+      }
+      console.log('initial tagged friends list for post', post.taggedFriends);
+      taggedFriendsList.forEach(function (friend) {
+        if(post.taggedFriends.indexOf(friend) == -1) {
+          return post.taggedFriends.push(friend);
+        }
+        return null;
+      });
+      post.save(function (err, dpost) {
+        if(err) {
+          console.error(err);
+          throw(err);
+        }
+        console.log('updated tagged friends list for post', dpost.taggedFriends);
+        var taggedFriendsList = dpost.taggedFriends;
+        console.log('updated tagged friends list to be returned to frontend', taggedFriendsList);
+        return res.status(200).json(taggedFriendsList);
+      });
+    });
+  });
+//------------------------GET friend post route---------------------------------
+router.get('/posts', function (req, res) {
+  console.log('post query for friend with postID', req.query.postID);
+  PostsModel.findOne({postID: req.query.postID}, function (err, post) {
+    if(err) {
+      console.error(err);
+      throw(err);
+    }
+    console.log('suddessfully retrieved the requested post', post.postID);
+    var data = {
+      owner: post.owner,
+      title: post.content.title,
+      text: post.content.text || null,
+      img: post.content.img || null,
+      postID: post.postID,
+      likes: post.likes
+    };
+    console.log('data sent to frontend is',data);
+    return res.status(200).json(data);
+  });
+});
+//---------------------------Friend comment routes-----------------------------
+router.get('/:postID/comments', function (req, res) {
+  console.log('get friend comments', req.query);
+  var
+    postID = req.params.postID,
+    commentID = req.query.commentID;
+  controlFlow.parallel([
+    function (cb) {
+      PostsModel.findOne({postID: postID}, function (err, post) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        var data = {
+          owner: post.owner,
+          title: post.content.title,
+          text: post.content.text || null,
+          img: post.content.img || null,
+          postID: post.postID,
+          likes: post.likes
+        };
+        return cb(null, data);
+      });
+    },
+    function (cb) {
+      CommentsModel.findOne({commentID: commentID}, function (err, comment) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        var data = {
+          author: comment.author,
+          text: comment.content || null,
+          commentID: comment.commentID,
+          likes: comment.likes
+        };
+        return cb(null, data);
+      });
+  }], function (err, results) {
+    if(results) {
+      console.log('got post and comments as requested', results);
+      var
+        post = results[0],
+        comments = results[1];
+      return res.status(200).json({
+        post: post,
+        comments: comments
+      });
+    }
+    return res.status(500).render('pages/errors');
+  });//end control flow parallel
+});
+//---------------------------friend commenting on our post---------------------
+router.post('/posts/:postID/friends/comments', function (req, res) {
+  console.log('received friend comment for post with id', req.params.postID);
+  console.log(req.body);
   var
     newComment,
-    commentID;
+    commentID,
+    newCommentID,
+    postOwner;
   controlFlow.series([
     function (cb) {
+      //crate a new comment document
       newComment = new CommentsModel();
       newComment.forPost.title = req.body.data.postTitle;
       newComment.forPost.owner = req.body.data.postOwner;
@@ -620,57 +978,350 @@ router.post('/posts/comments', function (req, res) {
       newComment.commentID = generateRandomPageID();
       newComment.author = req.body.data.author;
       newComment.content = req.body.data.comment;
-      newComment.img = req.body.data.img;
       newComment.save(function (err, comment) {
         if(err) {
-          cb(err);
+          console.error(err);
+          return cb(err);
         }
         console.log('new comment successfully saved', comment);
-        req.user.hasComments = req.user.hasComments || true;
         commentID = comment._id;
+        newCommentID = comment.commentID;
         console.log('new comments data successfully created', comment);
         return cb(null, comment);
       });
     },
     function (cb) {
+      //update the postOwner comments status
+      UserModel.findOne({email: req.body.data.postOwner}, function (err, user) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        postOwner = user.email;
+        user.hasComments = user.hasComments || true;
+        user.save(function (err, duser) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          var postOwnerSocket = userSockets[duser._id];
+          return cb(null, postOwnerSocket);
+        })
+      })
+    },
+    function (cb) {
+      //update the post with comments data
       PostsModel.findOne({postID: req.body.data.postID}, function (err, post) {
           console.log('returned post obj', post);
         if(err) {
+          console.error(err);
           return cb(err);
         }
         //console.log('initial comments for post', post.comments);
         post.comments.unshift(commentID);
         post.save(function (err, dpost) {
           if(err) {
+            console.error(err);
             return cb(err);
           }
           console.log('updated comments for post', dpost);
           return cb(null, dpost);
         });
       });
+  },
+  function (cb) {
+    //get all the friends posts and update the friend
+    PostsModel.find({owner: postOwner}).sort('-modifiedOn').
+      exec(function (err, posts) {
+        if(err) {
+          console.log('couldnt find owner of post commented on');
+          console.error(err);
+          return cb(err);
+        }
+        var data = [];
+        posts.forEach(function (post) {
+          return data.push({
+            owner: post.owner,
+            title: post.content.title,
+            text: post.content.text,
+            img: post.content.img,
+            postID: post.postID,
+            likes: post.likes,
+            postsComments: [],
+            taggedFriends: post.taggedFriends || []
+          });
+        });
+        console.log('available posts for post owner from comment on friend post', data);
+        return cb(null, data);
+      });//end of exec
   }], function (err, results) {
     if(results) {
-      console.log('user post has been updated with comments data', results);
-      return res.status(200).json('OK!');
+      console.log('user post has been updated with comments data by friend', results);
+      var
+        postOwnerSocket = results[1],
+        postOwnerPostsArr = results[3];
+      //socket.emit('getUserPostsCommentsInfo', self.userPageInfo.userPosts);
+      postOwnerSocket.emit('userPostsInfo', postOwnerPostsArr);
+      return res.status(200).json(newCommentID);
     }
-    return res.status(500).render('pages/error');
-  });
+    return res.status(500).render('pages/errors');
+  });//end controlflow series
 });
-//---------------------------posts like routes---------------------------------
-router.post('/posts/:postID/likes', function (req, res) {
-  var postID = req.params.postID;
-  console.log('add 1 like to post with postID', postID);
-  PostsModel.findOne({postID: postID}, function (err, post) {
+//---------------------------friend likes our post-----------------------------
+router.get('/posts/:postID/friends/likes', function (req, res) {
+  //NB because likes count isnt crucial, we dont need to update it in real time,
+  //any subsequent dBase access for the post will have the new like count
+  console.log('add 1 like to post with id', req.params.postID);
+  PostsModel.findOne({postID: req.params.postID}, function (err, post) {
     if(err) {
-      throw(err);
+      console.error(err);
+      throw(err)
     }
-    console.log('initial val of likes', post.likes);
+    console.log('initial post likes count', post.likes);
     post.likes += 1;
     post.save(function (err, dpost) {
       if(err) {
+        console.error(err);
         throw(err);
       }
-      console.log('updated likes count', post.likes);
+      console.log('updated psoste like count', dpost.likes);
+      return res.status(200).json('OK!');
+    });
+  });
+});
+//---------------------------friend share our post-----------------------------
+router.post('/posts/:postID/friends/share', function (req, res) {
+  console.log('post to be share has ID', req.params.postID);
+  var
+    postOwner = req.body.data,
+    postToShare,
+    postID,
+    dPostID = req.params.postID;
+  controlFlow.series([
+    function (cb) {
+      PostsModel.findOne({postID: dPostID}, function (err, post) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        console.log('retrieved post for shareing operation', post);
+        postToShare = post;
+        console.log('assigned post to share', postToShare);
+        return cb(null, postToShare);
+      });
+  }, function (cb) {
+    console.log('creating the shared post');
+    var newPost = new PostsModel();
+    newPost.forPage = req.user.pageID;
+    newPost.owner = req.user.email;
+    newPost.content.title = postToShare.content.title;
+    newPost.content.text = postToShare.content.text;
+    newPost.content.img = postToShare.content.img;
+    newPost.postID = generateRandomPageID();
+    newPost.via = postOwner;
+    newPost.save(function (err, dpost) {
+      if(err) {
+        console.log('error creating new post to share');
+        console.error(err);
+        return cb(err);
+      }
+      console.log('the newly created shared post', dpost);
+      postID = dpost._id;
+      console.log('retrieved post _id for shared post', postID);
+      return cb(null, dpost);
+    });
+  },
+   function (cb) {
+    PageModel.findOne({owner: req.user._id}, function (err, page) {
+      if(err) {
+        console.error(err);
+        return cb(err);
+      }
+      console.log('initial posts for page', page.posts);
+      page.posts.unshift(postID);
+      page.save(function (err, dpage) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        console.log('confirm new post _id added to page', dpage.posts[0]);
+        return cb(null, page);
+      });
+    });
+  }], function (err, results) {
+    if(results) {
+      console.log('user page has been updated with shared posts data', results);
+      return res.status(200).json(postID);
+    }
+    return res.status(500).render('pages/errors');
+  });
+});
+//---------------------------We want to view friend's Hub----------------------
+router.get('/hub', function (req, res) {
+  console.log('received request to view the hub of', req.query.email);
+  var
+    friendEmail = req.query.email,
+    friendID,
+    friendStatus,
+    friendPageInfo = {},
+    friendPostsArray = [],
+    friendPosts_idArray = [],
+    friendPostsIDArray = [],
+    commentsArray = [];
+  controlFlow.series([
+    function (cb) {
+      //1st use email to get friend's _id
+      UserModel.findOne({email: friendEmail}, function (err, friend) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        console.log('successfully located the friend by email');
+        friendID = friend._id;
+        friendStatus = friend.status;
+        console.log('successfully extracted the friend\'s _id', friendID);
+        console.log('suddeccfully retrievd the friend\'s status', friendStatus);
+        return cb(null, {
+          fullName: friend.firstName +' '+ friend.lastName,
+          email: friend.email,
+          status: friendStatus
+         });
+      });
+    },
+    function (cb) {
+      //next use _id to get friend's page info
+      PageModel.findOne({owner: friendID}, function (err, page) {
+        if(err) {
+          console.error(err);
+          return cb(err);
+        }
+        console.log('successfully accessed the friend\'s page info');
+        friendPageInfo.title = page.title;
+        friendPageInfo.description = page.description;
+        friendPageInfo.postsArray = page.posts;
+        friendPosts_idArray = page.posts;
+        console.log('successfully extracted friend hub metadata', friendPageInfo);
+        console.log('friend posts _id array', friendPosts_idArray);
+        return cb(null, friendPageInfo);
+      });
+    },
+    function (cb) {
+      console.log('starting search for posts for friends page');
+      //next use friendPostsIDArray to retreuve all posts on friend's hub
+        controlFlow.each(friendPosts_idArray,
+          function (_id, cb) {
+            PostsModel.findOne({_id: _id}, function (err, post) {
+              if(err) {
+                console.error(err);
+                return cb(err);
+              }
+              if(!post) {
+                console.log('friend has no post to show');
+                return cb(null);
+              }
+              console.log('suceesfully retrieveing data for one post with _id', _id);
+              var data = {
+                owner: post.owner,
+                title: post.content.title,
+                text: post.content.text,
+                img: post.content.img,
+                postID: post.postID,
+                likes: post.likes,
+                via: post.via,
+                postsComments: [],
+                taggedFriends: post.taggedFriends || []
+              };
+              console.log('processed post is',data);
+              friendPostsArray.push(data);
+              friendPostsIDArray.push(post.postID);
+              console.log('sucessfully added post to array', friendPostsArray);
+              console.log('successfully extracted the postID and added to array', friendPostsIDArray);
+              return cb(null);
+            })
+          },
+          function (err) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          console.log('all posts on friends hub successfully retrieved');
+          return cb(null, friendPostsArray);
+        });
+    },
+    function (cb) {
+      //next use the postsID array to retrieve all the comments for a particular post
+      console.log('starting search for commnets for friends posts');
+        controlFlow.each(friendPostsIDArray, function (postID, cb) {
+          CommentsModel.find({'forPost.postID': postID}).sort('-createdOn').
+          exec(function (err, comments) {
+            if(err) {
+              console.error(err);
+              return cb(err);
+            }
+            if(comments.length < 1) {
+                console.log('null post comments for the post with ID', postID);
+                return cb(null);
+              }
+              console.log('post comments for post', comments);
+              var filteredComments = [];
+              comments.forEach(function (comment) {
+                return filteredComments.push({
+                  postID: comment.forPost.postID,
+                  commentID: comment.commentID,
+                  likes: comment.likes,
+                  author: comment.author,
+                  content: comment.content
+                });
+              });
+              commentsArray.push(filteredComments);
+              return cb(null);
+            });
+        }, function (err) {
+          if(err) {
+            console.error(err);
+            return cb(err);
+          }
+          console.log('successfully retrieved all the posts comments for friend\'s posts');
+          return cb(null, commentsArray);
+        });
+    }], function (err, results) {
+      console.log('begin processing of results');
+      if(results) {
+        console.log('resuklts of retreiving the friends page', results);
+        var
+          friendFullName = results[0].fullName,
+          friendEmail = results[0].email,
+          friendStatus = results[0].status,
+          friendPosts = results[2] || null,
+          friendPostsComments = results[3][0] || null,
+          data = {
+            friendFullName: friendFullName,
+            friendEmail: friendEmail,
+            friendStatus: friendStatus,
+            friendPosts: friendPosts,
+            friendPostsComments: friendPostsComments
+          };
+        return res.status(200).json(data);
+      }
+      return res.status(500).render('pages/errors');
+    });
+});
+//---------------------------like friend comment-------------------------------
+router.get('/comments/likes', function (req, res) {
+  console.log('received request to increase like count for comment with ID ', req.query.commentID);
+  CommentsModel.findOne({commentID: req.query.commentID}, function (err, comment) {
+    if(err) {
+      console.error(err);
+      throw(err);
+    }
+    console.log('initial val of likes', comment.likes);
+    comment.likes += 1;
+    comment.save(function (err, dcomment) {
+      if(err) {
+        console.error(err);
+        throw(err);
+      }
+      console.log('updated likes count', comment.likes);
       return res.status(200).json('OK!');
     });
   });

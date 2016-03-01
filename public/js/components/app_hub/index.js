@@ -12,10 +12,16 @@ module.exports = function (jQ, socket, generateRandomFileName) {
           userPosts: [],
           postComments: []
         },
+        taggedFriendsList: [],
+        postTagInfo: {},
         newPostsURL: '/users/posts/newposts',
         postCommentsURL: '/users/posts/comments',
         postLikesURLprefix: '/users/posts/',
         postLikesURLsuffix: '/likes',
+        postTagURLprefix: '/users/posts/',
+        postTagURLsuffix: '/tag',
+        postCommentsLikesURLprefix: '/users/posts/comments/',
+        postCommentsLikesURLsuffix: '/likes',
         postsImgsURLprefix: '/users/posts/newposts/',
         postsImgsURLsuffix: '/imgs',
         statusUpdateURL: '/users/status',
@@ -38,10 +44,10 @@ module.exports = function (jQ, socket, generateRandomFileName) {
         showCommentSuccessMsg: false,
         showCommentErrMsg: false,
         showLikeErrMsg: false,
-        showShareErrMsg: false,
-        showShareSuccessMsg: false,
         showTagErrMsg: false,
-        showTagSuccessMsg: false
+        showTagSuccessMsg: false,
+        showTagWarning: false,
+        showPostOwnerWarning: false
       };
     },
     computed: {
@@ -73,6 +79,7 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               this.changeStatus = false;
               this.chngStatusBtn = true;
               this.showStatusSuccessMsg = true;
+              this.$dispatch('userStatusChanged');
               return socket.emit('userStatusChanged');//required to update feed
             }.bind(this), function (info) {
               this.newStatus = '';
@@ -126,7 +133,8 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               img: '',
               via: ''
             },
-            imgName;
+            imgName,
+            postTitle = this.newPostTitle;
           if(this.$els.postImg.value.trim()) {
             imgName = this.$els.postImg.value.split('\\')[2];
             data.img = imgName;
@@ -137,9 +145,12 @@ module.exports = function (jQ, socket, generateRandomFileName) {
           }).
             then(function (res) {
               console.log('response from new post submission', res);
+              var postID = res.data;
+              console.log('post id for new post', postID);
               this.showNewPostForm = false;
               this.showPostSuccessMsg = true;
-              return socket.emit('newPostCreated', self.userProfileInfo.email);//required to update feed
+              this.$dispatch('newPostCreated', postTitle);
+              return socket.emit('newPostCreated', this.userProfileInfo.email, postTitle, postID);//required to update feed
             }.bind(this), function (info) {
               this.showNewPostForm = false;
               console.log('info obj', info);
@@ -160,24 +171,23 @@ module.exports = function (jQ, socket, generateRandomFileName) {
         console.log(item.title +' was liked one time');
         console.log('add 1 to like count for post with ID', item.postID);
         console.log('intial like count of ' + item.title +' is ' + item.likes);
-        var postLikesURL = this.postLikesURLprefix + item.postID + this.postLikesURLsuffix;
+        var
+          postLikesURL = this.postLikesURLprefix + item.postID + this.postLikesURLsuffix,
+          postTitle = item.title,
+          postID = item.postID;
         this.$http.post(postLikesURL).
           then(function (res) {
             console.log('response from increatse like', res);
             console.log('successfully increased like count of ', item.title);
             item.likes += 1;
+            this.$dispatch('likedPost', postTitle);
+            socket.emit('likedPost', postTitle, postID);
             return console.log('new like count ', item.likes);
           }.bind(this), function (info) {
             console.log('info obj', info);
             console.log('failed to increase like count of ', item.title);
             return this.showLikeErrMsg = true;
           }.bind(this));
-      },
-      sharePost: function () {
-        return console.log('share post btn clicked');
-      },
-      tagFriends: function () {
-        return console.log('tag friends btn clicked');
       },
       commentDetails: function (post) {
         console.log('title of post on which comment to be made', post.title);
@@ -190,7 +200,7 @@ module.exports = function (jQ, socket, generateRandomFileName) {
           author: this.userProfileInfo.email,
           postID: post.postID
         };
-        return console.log('info for post to be commented on', this.postInfo);
+        return console.log('info for post to be commented on', this.commentInfo);
       },
       submitComment: function () {
         var self = this;
@@ -203,17 +213,21 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               author: this.commentInfo.author,
               comment: this.newPostComment
             },
-            imgName;
+            postTitle = this.commentInfo.title,
+            postID = this.commentInfo.postID;
           console.log('comment data to be sent to backend', data);
           this.$http.post(this.postCommentsURL, {
             data: data
           }).
             then(function (res) {
               console.log('response from new comment submission', res);
+              var commentID = res.data;
               this.newPostComment = '';
               this.showCommentSuccessMsg = true;
               console.log('postID', self.commentInfo.postID);
-              socket.emit('getUserPostsCommentsInfo', self.userPageInfo.userPosts);//required to update feed
+              socket.emit('getUserPostsCommentsInfo', self.userPageInfo.userPosts);
+              socket.emit('madeComment', postTitle, postID, commentID)//required to update feed
+              this.$dispatch('commentOnPost', postTitle);
               return self.commentInfo = {};
             }.bind(this), function (info) {
               this.newPostComment = '';
@@ -230,17 +244,159 @@ module.exports = function (jQ, socket, generateRandomFileName) {
         jQ('#closeModal').trigger('click');
         return console.log('discard comments btn clicked');
       },
-      likeComment: function () {
-        return console.log('like comment btn clicked');
+      likeComment: function (comment) {
+        console.log('like comment btn clicked');
+        console.log('liked comment ID', comment.commentID);
+        console.log('initial comments like count', comment.likes);
+        var
+          postCommentsLikesURL = this.postCommentsLikesURLprefix +
+            comment.commentID + this.postCommentsLikesURLsuffix,
+          commentAuthor = comment.author,
+          commentID = comment.commentID,
+          postID = comment.postID;
+        console.log('post comments likes url', postCommentsLikesURL);
+        this.$http.post(postCommentsLikesURL).
+          then(function (res) {
+            console.log('response from increatse like', res);
+            console.log('successfully increased like count of ', comment.commentID);
+            comment.likes += 1;
+            this.$dispatch('likedComment', commentAuthor);
+            socket.emit('likedComment', commentAuthor, postID, commentID);
+            return console.log('new like count ', comment.likes);
+          }.bind(this), function (info) {
+            console.log('info obj', info);
+            console.log('failed to increase like count of ', comment.commentID);
+            return this.showLikeErrMsg = true;
+          }.bind(this));
       },
-      shareComment: function () {
-        return console.log('share comment btn clicked');
+      tagFriend: function (friend, e) {
+        if(e.target.checked === true) {
+          console.log('initial tagged friends list', this.taggedFriendsList);
+          console.log('friend to be tagged is', friend);
+          if(this.taggedFriendsList.indexOf(friend) == -1) {
+            this.taggedFriendsList.push(friend);
+          }
+          return console.log('updated tagged friends list', this.taggedFriendsList);
+        }
+        if(e.target.checked === false) {
+          console.log('about to remove friend from list if present');
+          if(this.taggedFriendsList.indexOf(friend) != -1) {
+            console.log('initial tagged friends list', this.taggedFriendsList);
+            console.log('friend to be removed is', friend);
+            this.taggedFriendsList.splice(this.taggedFriendsList.indexOf(friend), 1);
+            return console.log('updated tagged friends list', this.taggedFriendsList);
+          }
+        }
+        return null;
       },
-      tagComment: function () {
-        return console.log('tag comment btn clicked');
+      tagAllFriends: function () {
+        if(this.$els.tagAllFriendsBtn.textContent == 'Tag all your friends') {
+          console.log('tag all friends btn clicked');
+          console.log('initial tagged friends list via taggallfriends', this.taggedFriendsList);
+          this.userProfileInfo.friendsList.forEach(function (friend) {
+            if(this.taggedFriendsList.indexOf(friend) == -1) {
+               return this.taggedFriendsList.push(friend);
+            }
+          }.bind(this));
+          this.$els.tagAllFriendsBtn.textContent = 'Untag all friends';
+          console.log('final tagged friends list via taggallfriends', this.taggedFriendsList);
+          return jQ('#tagFriends input[type="checkbox"]').each(function () {
+            //access each elem in the preceding selection and then click on the checkbox
+            return jQ(this).click();
+          });
+        }
+        if(this.$els.tagAllFriendsBtn.textContent == 'Untag all friends') {
+          console.log('untag all friends btn clicked');
+          console.log('initial tagged friends list via taggallfriends', this.taggedFriendsList);
+          this.taggedFriendsList = [];
+          console.log('final tagged friends list via taggallfriends', this.taggedFriendsList);
+          this.$els.tagAllFriendsBtn.textContent = 'Tag all your friends';
+          return jQ('#tagFriends input[type="checkbox"]').each(function () {
+            //access each elem in the preceding selection and then click on the checkbox
+            return jQ(this).click();
+          });
+        }
+      },
+      tagDetails: function (post) {
+        console.log('details of post to be tagged', post.postID);
+        //1st empty the postTagInfo object
+        this.postTagInfo = {};
+        //then rehydrate with updated info
+        return this.postTagInfo = {
+          sourcePost: post,
+          owner: post.owner,
+          postID: post.postID,
+          title: post.title
+        };
+      },
+      submitTag: function () {
+        var self = this;
+        console.log('tag friends btn clicked!');
+        console.log('tagged friends list is an array', Array.isArray(this.taggedFriendsList));
+        if(this .userProfileInfo.email == this.postTagInfo.owner) {
+          if(this.showPostOwnerWarning) {
+            this.showPostOwnerWarning = false;
+          }
+          if(this.taggedFriendsList.length > 0) {
+            if(this.showTagWarning) {
+              this.showTagWarning = false;
+            }
+            var
+              postID = this.postTagInfo.postID,
+              postTagURL = this.postTagURLprefix + postID + this.postTagURLsuffix,
+              data = {
+                taggedFriendsList: this.taggedFriendsList
+              },
+              taggedFriendsList = this.taggedFriendsList,
+              postTitle = this.postTagInfo.title;
+            this.$http.post(postTagURL, data).
+              then(function (res) {
+                console.log('response from tagged friends', res.data);
+                var sourcePost = this.postTagInfo.sourcePost;
+                sourcePost.taggedFriends = [];
+                console.log('postID of source post is', sourcePost.postID);
+                console.log('source post tagged friends list', sourcePost.taggedFriends);
+                console.log('updated post tagged friends list', res.data);
+                res.data.forEach(function (friend) {
+                  return sourcePost.taggedFriends.push(friend);
+                });
+                socket.emit('taggedFriends', postID, postTitle, taggedFriendsList);
+                this.$dispatch('taggedFriends', postTitle, taggedFriendsList);
+                return console.log('successfully tagged friends for post ', postID);
+              }.bind(this), function (info) {
+                console.log('info obj', info);
+                console.log('failed to tag friends for post ', postID);
+                return this.showTagErrMsg = true;
+              }.bind(this));
+              this.taggedFriendsList = [];
+              jQ('#tagFriends input[type="checkbox"]').attr('checked', false);
+              this.$els.tagAllFriendsBtn.textContent = 'Tag all your friends';
+              return jQ('#closeTagModal').trigger('click');
+          }
+          return this.showTagWarning = true;
+        }
+        return this.showPostOwnerWarning = true;
+      },
+      discardTag: function () {
+        this.taggedFriendsList = [];
+        jQ('#tagFriends input[type="checkbox"]').attr('checked', false);
+        jQ('#closeTagModal').trigger('click');
+        return console.log('discard tag btn clicked!');
       }
     },
-    events: {},
+    events: {
+      /*'updateUserPosts': function () {
+        console.log('received updateUserPosts req from activity feed');
+        return socket.emit('getUserPostsCommentsInfo', this.userPageInfo.userPosts);
+      }*/
+    },
+    ready: function () {
+      //when users status changes
+      socket.on('updateStatus', function (data) {
+        console.log('status change info', data.status);
+        return this.userPageInfo.pageMetaData.status = data.status;
+      }.bind(this));
+    },
     created: function () {
       var self = this;
       //get user page info
@@ -251,13 +407,16 @@ module.exports = function (jQ, socket, generateRandomFileName) {
       socket.on('userPageInfo', function (data) {
         var
           title = document.getElementsByTagName("title")[0],
-          pgtitle = title.textContent;
+          pgtitle = title.textContent,
+          $appLabel = jQ('#app-label');
         console.log('current page title', pgtitle);
         console.log('user has page', data);
+        console.log('the appLabel is ', $appLabel.text());
         this.userPageInfo.pageMetaData.status = this.userProfileInfo.status;
         this.userPageInfo.pageMetaData.title = data.title;
         this.userPageInfo.pageMetaData.description = data.description;
         title.textContent = data.title;
+        $appLabel.text('Socialify | Hub');
         console.log('requesting for user posts info from created socket hook');
         return socket.emit('getUserPostsInfo', self.userProfileInfo.email);
       }.bind(this));

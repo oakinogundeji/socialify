@@ -1,0 +1,76 @@
+<section id="app-feeds" class="col-xs-12 col-md-5">
+  <div id="user-feed" class="well">
+    <p>Most recent activity: <a href="" @click.stop.prevent="getActivity" v-el:activity-link>{{userActivity[0]}}</a></p>
+    <div class="pull-right">
+      <a href="" class="btn btn-success btn-default"
+      @click.stop.prevent="getOtherActivity">View other activity</a>
+    </div>
+  </div>
+  <span id="feedModalBtn" data-toggle="modal" data-target="#feedModal"></span>
+  <span id="otherActivitiesModalBtn" data-toggle="modal"
+  data-target="#otherActivitiesModal"></span>
+  <!--<pre>{{$data | json}}</pre>-->
+</section>
+<!--view feed Modal-->
+<div class="modal fade" id="feedModal" tabindex="-1" role="dialog" aria-labelledby="feedModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="closeFeedModal" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="feedModalLabel">{{userActivity[0]}}</h4>
+      </div>
+      <div class="modal-body">
+        <div class="well">
+          <div v-for="value in feedModalContent">
+            <p>{{$key}}: {{{value}}}</p>
+          </div>
+          <div class="form-group" v-show="showCommentInput">
+            <label for="comment-feed-content">Share your thoughts...</label>
+            <textarea class="form-control" rows="5" id="comment-feed-content" v-model="commentFeedContent"
+            placeholder="I totally agree..."></textarea>
+          </div>
+          <div class="feed-enhancements">
+            <span class="fa fa-comments fa-2x" @click.stop="feedComment(feedModalContent)"></span>
+            <span class="fa fa-heart fa-2x" @click.stop="feedLikes(feedModalContent)"></span>
+            <span class="fa fa-share fa-2x" @click.stop="feedShare(feedModalContent)"></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success btn-default" data-dismiss="modal"
+        @click.stop.prevent="submitFeedComment">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default" data-dismiss="modal"
+        @click.stop.prevent="discardFeedComment">Discard!</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--view other activities Modal-->
+<div class="modal fade" id="otherActivitiesModal" tabindex="-1" role="dialog" aria-labelledby="otherActivitiesModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="closeOtherActivitiesModal" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="otherActivitiesModalLabel">All activities in your feed</h4>
+      </div>
+      <div class="modal-body">
+        <div class="well">
+          <div v-for="item in otherActivity" track-by="$index">
+            <p><a href="#" @click.stop.prevent="viewOtherActivity(item)">{{item}}</a></p>
+          </div>
+          <div class="feed-enhancements">
+            <span class="fa fa-comments fa-2x"></span>
+            <span class="fa fa-heart fa-2x"></span>
+            <span class="fa fa-share fa-2x"></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success btn-default" data-dismiss="modal">Done!</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -52,6 +52,7 @@ var PostsSchema = mongoose.Schema({
     type: Number,
     default: 0
   },
+  taggedFriends: [String],
   via: String
 });
 //=============================================================================

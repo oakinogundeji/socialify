@@ -1,0 +1,87 @@
+<!--Start friend hub template-->
+<section>
+  <h3>Welcome to {{friendHubData.friendFullName}}'s Hub!</h3>
+  <!--Start display friend metadata-->
+  <section class="row" id="friend-hub-metadata">
+    <div class="col-md-6">
+      <p>Email: {{friendHubData.friendEmail}}</p>
+      <h4>{{friendHubData.friendFullName}}'s Status: {{friendHubData.friendStatus}}</h4>
+    </div>
+  </section>
+  <!--End display friend metadata-->
+  <!--Start display friend posts-->
+  <section class="row" id="display-friend-hub-posts">
+    <ul v-show="friendHubData.friendPosts" class="list-group">
+      <li v-for="item in friendHubData.friendPosts" class="list-group-item">
+        <div class="well">
+          <p v-show="item.title">Title: {{item.title}}</p>
+          <p v-show="item.text">Story: {{item.text}}</p>
+          <p v-show="item.img">Image: <figure v-show="item.img"><img :src=item.img alt={{item.title}}'s image'></figure></p>
+          <p v-show="item.taggedFriends">Tagged: <span v-for="item in item.taggedFriends">
+            <i>{{item}} </i>
+          </span></p>
+          <p v-show="item.via">Original Poster: {{item.via}}</p>
+          <div class="post-enhancements">
+            <span class="fa fa-comments fa-2x" data-toggle="modal" data-target="#friend-comments-Modal"
+              @click="commentDetails(item)"></span>
+            <span class="fa fa-heart fa-2x" @click.stop.prevent="likePost(item)"></span><span>{{item.likes}}</span>
+          </div>
+          <!--Start display friend posts comments-->
+          <section id="display-friend-posts-comments">
+            <ul>
+              <li v-for="item in friendHubData.friendPostsComments">
+                <div class="well">
+                  <p v-show="item.content">Content: {{item.content}}</p>
+                  <span v-show="item.author">Author: {{item.author}}</span>
+                </div>
+                <div class="comment-enhancements">
+                  <span class="fa fa-heart" @click.stop.prevent="likeFriendPostComment(item)"></span><span>{{item.likes}}</span>
+                </div>
+              </li>
+            </ul>
+          </section>
+          <!--End display friend posts comments-->
+          <span v-show="showCommentSuccessMsg">Your comment was successfully submitted!</span>
+          <span v-show="showCommentErrMsg">There was an error submitting your comment,
+            please try later!</span>
+          <span v-show="showLikeErrMsg">There was an error performing the 'like',
+            please try later!</span>
+        </div>
+      </li>
+    </ul>
+  </section>
+  <!--Start display friend posts-->
+  <!--<pre>{{$data | json}}</pre>-->
+</section>
+<!--End friend hub template-->
+<!-- start make friend posts Comments Modal-->
+<div class="modal fade" id="friend-comments-Modal" tabindex="-1" role="dialog" aria-labelledby="friendCommentsModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="close-friend-comments-Modal-btn" data-dismiss="modal" aria-label="Close"
+        @click.prevent><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="friend-comments-Modal-Label">Leave a comment...</h4>
+      </div>
+      <div class="modal-body">
+        <form>
+          <div class="form-group">
+            <label for="post-comment">What do you think about this post?</label>
+            <textarea class="form-control" rows="5" id="post-comment" v-model="newFriendPostComment"
+            placeholder="Share your thoughts e.g. Excellent post..."></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <div>
+          <span v-show="showCommentsWarning">Please make a comment or discard the action!</span>
+        </div>
+        <button type="submit" class="btn btn-success btn-default" data-dismiss="modal"
+        @click.stop.prevent="submitFriendComment">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default" data-dismiss="modal"
+        @click.stop.prevent="discardFriendComment">Discard!</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- start make friend posts Comments Modal-->

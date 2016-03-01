@@ -10,6 +10,7 @@ var
   logger = require('morgan'),
   bParser = require('body-parser'),
   session = require('express-session'),
+  compression = require('compression'),
   io = require('./socket/socket').io,
   ejsLayout = require('express-ejs-layouts'),
   mongoose = require('mongoose'),
@@ -100,6 +101,7 @@ io.use(function (socket, next) {
 });
 
 app.use(ejsLayout);
+app.use(compression());
 app.use(express.static(path.join(__dirname, 'public')));
 //=============================================================================
 /**

@@ -1,8 +1,10 @@
 # passport-oauth1
 
-[![Build](https://travis-ci.org/jaredhanson/passport-oauth1.png)](http://travis-ci.org/jaredhanson/passport-oauth1)
-[![Coverage](https://coveralls.io/repos/jaredhanson/passport-oauth1/badge.png)](https://coveralls.io/r/jaredhanson/passport-oauth1)
-[![Dependencies](https://david-dm.org/jaredhanson/passport-oauth1.png)](http://david-dm.org/jaredhanson/passport-oauth1)
+[![Build](https://img.shields.io/travis/jaredhanson/passport-oauth1.svg)](https://travis-ci.org/jaredhanson/passport-oauth1)
+[![Coverage](https://img.shields.io/coveralls/jaredhanson/passport-oauth1.svg)](https://coveralls.io/r/jaredhanson/passport-oauth1)
+[![Quality](https://img.shields.io/codeclimate/github/jaredhanson/passport-oauth1.svg?label=quality)](https://codeclimate.com/github/jaredhanson/passport-oauth1)
+[![Dependencies](https://img.shields.io/david/jaredhanson/passport-oauth1.svg)](https://david-dm.org/jaredhanson/passport-oauth1)
+
 
 General-purpose OAuth 1.0 authentication strategy for [Passport](http://passportjs.org/).
 
@@ -34,20 +36,21 @@ list so other people can find it.
 The OAuth authentication strategy authenticates users using a third-party
 account and OAuth tokens.  The provider's OAuth endpoints, as well as the
 consumer key and secret, are specified as options.  The strategy requires a
-`verify` callback, which receives a token and profile, and calls `done`
+`verify` callback, which receives a token and profile, and calls `cb`
 providing a user.
 
-    passport.use(new OAuth2Strategy({
+    passport.use(new OAuth1Strategy({
         requestTokenURL: 'https://www.example.com/oauth/request_token',
         accessTokenURL: 'https://www.example.com/oauth/access_token',
         userAuthorizationURL: 'https://www.example.com/oauth/authorize',
         consumerKey: EXAMPLE_CONSUMER_KEY,
         consumerSecret: EXAMPLE_CONSUMER_SECRET,
-        callbackURL: "http://127.0.0.1:3000/auth/example/callback"
+        callbackURL: "http://127.0.0.1:3000/auth/example/callback",
+        signatureMethod: "RSA-SHA1"
       },
-      function(token, tokenSecret, profile, done) {
+      function(token, tokenSecret, profile, cb) {
         User.findOrCreate({ exampleId: profile.id }, function (err, user) {
-          return done(err, user);
+          return cb(err, user);
         });
       }
     ));
@@ -74,19 +77,46 @@ application:
 
 - [passport-oauth2](https://github.com/jaredhanson/passport-oauth2) — OAuth 2.0 authentication strategy
 - [passport-http-oauth](https://github.com/jaredhanson/passport-http-oauth) — OAuth authentication strategy for APIs
-- [OAuthorize](https://github.com/jaredhanson/oauthorize) — OAuth service provider toolkit
+- [oauthorize](https://github.com/jaredhanson/oauthorize) — OAuth service provider toolkit
 
-## Tests
+## Contributing
 
-    $ npm install
-    $ npm test
+#### Tests
 
-## Credits
+The test suite is located in the `test/` directory.  All new features are
+expected to have corresponding test cases.  Ensure that the complete test suite
+passes by executing:
 
-  - [Jared Hanson](http://github.com/jaredhanson)
+```bash
+$ make test
+```
+
+#### Coverage
+
+All new feature development is expected to have test coverage.  Patches that
+increse test coverage are happily accepted.  Coverage reports can be viewed by
+executing:
+
+```bash
+$ make test-cov
+$ make view-cov
+```
+
+## Support
+
+#### Funding
+
+This software is provided to you as open source, free of charge.  The time and
+effort to develop and maintain this project is dedicated by [@jaredhanson](https://github.com/jaredhanson).
+If you (or your employer) benefit from this project, please consider a financial
+contribution.  Your contribution helps continue the efforts that produce this
+and other open source software.
+
+Funds are accepted via [PayPal](https://paypal.me/jaredhanson), [Venmo](https://venmo.com/jaredhanson),
+and [other](http://jaredhanson.net/pay) methods.  Any amount is appreciated.
 
 ## License
 
 [The MIT License](http://opensource.org/licenses/MIT)
 
-Copyright (c) 2011-2013 Jared Hanson <[http://jaredhanson.net/](http://jaredhanson.net/)>
+Copyright (c) 2011-2016 Jared Hanson <[http://jaredhanson.net/](http://jaredhanson.net/)>

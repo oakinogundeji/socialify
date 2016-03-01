@@ -1,11 +1,10 @@
-/**
- * Module dependencies.
- */
+// Load modules.
 var passport = require('passport-strategy')
   , url = require('url')
   , util = require('util')
   , utils = require('./utils')
   , OAuth = require('oauth').OAuth
+  , SessionRequestTokenStore = require('./requesttoken/session')
   , InternalOAuthError = require('./errors/internaloautherror');
 
 
@@ -25,10 +24,10 @@ var passport = require('passport-strategy')
  * Applications must supply a `verify` callback, for which the function
  * signature is:
  *
- *     function(token, tokenSecret, profile, done) { ... }
+ *     function(token, tokenSecret, profile, cb) { ... }
  *
  * The verify callback is responsible for finding or creating the user, and
- * invoking `done` with the following arguments:
+ * invoking `cb` with the following arguments:
  *
  *     done(err, user, info);
  *
@@ -44,6 +43,7 @@ var passport = require('passport-strategy')
  *   - `userAuthorizationURL`  URL used to obtain user authorization
  *   - `consumerKey`           identifies client to service provider
  *   - `consumerSecret`        secret used to establish ownership of the consumer key
+ *   - 'signatureMethod'       signature method used to sign the request (default: 'HMAC-SHA1')
  *   - `callbackURL`           URL to which the service provider will redirect the user after obtaining authorization
  *   - `passReqToCallback`     when `true`, `req` is the first argument to the verify callback (default: `false`)
  *
@@ -57,9 +57,9 @@ var passport = require('passport-strategy')
  *         consumerSecret: 'shhh-its-a-secret'
  *         callbackURL: 'https://www.example.net/auth/example/callback'
  *       },
- *       function(token, tokenSecret, profile, done) {
+ *       function(token, tokenSecret, profile, cb) {
  *         User.findOrCreate(..., function (err, user) {
- *           done(err, user);
+ *           cb(err, user);
  *         });
  *       }
  *     ));
@@ -98,14 +98,13 @@ function OAuthStrategy(options, verify) {
   this._userAuthorizationURL = options.userAuthorizationURL;
   this._callbackURL = options.callbackURL;
   this._key = options.sessionKey || 'oauth';
+  this._requestTokenStore = options.requestTokenStore || new SessionRequestTokenStore({ key: this._key });
   this._trustProxy = options.proxy;
   this._passReqToCallback = options.passReqToCallback;
   this._skipUserProfile = (options.skipUserProfile === undefined) ? false : options.skipUserProfile;
 }
 
-/**
- * Inherit from `passport.Strategy`.
- */
+// Inherit from `passport.Strategy`.
 util.inherits(OAuthStrategy, passport.Strategy);
 
 
@@ -117,9 +116,14 @@ util.inherits(OAuthStrategy, passport.Strategy);
  */
 OAuthStrategy.prototype.authenticate = function(req, options) {
   options = options || {};
-  if (!req.session) { return this.error(new Error('OAuthStrategy requires session support. Did you forget app.use(express.session(...))?')); }
   
   var self = this;
+  var meta = {
+    requestTokenURL: this._oauth._requestUrl,
+    accessTokenURL: this._oauth._accessUrl,
+    userAuthorizationURL:  this._userAuthorizationURL,
+    consumerKey: this._oauth._consumerKey
+  }
   
   if (req.query && req.query.oauth_token) {
     // The request being authenticated contains an oauth_token parameter in the
@@ -134,62 +138,84 @@ OAuthStrategy.prototype.authenticate = function(req, options) {
     // This access token and token secret, along with the optional ability to
     // fetch profile information from the service provider, is sufficient to
     // establish the identity of the user.
-    
-    // Bail if the session does not contain the request token and corresponding
-    // secret.  If this happens, it is most likely caused by initiating OAuth
-    // from a different host than that of the callback endpoint (for example:
-    // initiating from 127.0.0.1 but handling callbacks at localhost).
-    if (!req.session[self._key]) { return self.error(new Error('Failed to find request token in session')); }
-    
     var oauthToken = req.query.oauth_token;
-    var oauthVerifier = req.query.oauth_verifier || null;
-    var oauthTokenSecret = req.session[self._key].oauth_token_secret;
     
-    // NOTE: The oauth_verifier parameter will be supplied in the query portion
-    //       of the redirect URL, if the server supports OAuth 1.0a.
-    
-    this._oauth.getOAuthAccessToken(oauthToken, oauthTokenSecret, oauthVerifier, function(err, token, tokenSecret, params) {
-      if (err) { return self.error(self._createOAuthError('Failed to obtain access token', err)); }
-      
-      // The request token has been exchanged for an access token.  Since the
-      // request token is a single-use token, that data can be removed from the
-      // session.
-      delete req.session[self._key].oauth_token;
-      delete req.session[self._key].oauth_token_secret;
-      if (Object.keys(req.session[self._key]).length === 0) {
-        delete req.session[self._key];
+    function loaded(err, oauthTokenSecret, state) {
+      if (err) { return self.error(err); }
+      if (!oauthTokenSecret) {
+        return self.fail(state, 403);
       }
+    
+      // NOTE: The oauth_verifier parameter will be supplied in the query portion
+      //       of the redirect URL, if the server supports OAuth 1.0a.
+      var oauthVerifier = req.query.oauth_verifier || null;
+    
+      self._oauth.getOAuthAccessToken(oauthToken, oauthTokenSecret, oauthVerifier, function(err, token, tokenSecret, params) {
+        if (err) { return self.error(self._createOAuthError('Failed to obtain access token', err)); }
       
-      self._loadUserProfile(token, tokenSecret, params, function(err, profile) {
-        if (err) { return self.error(err); }
-        
-        function verified(err, user, info) {
+        function destroyed(err) {
           if (err) { return self.error(err); }
-          if (!user) { return self.fail(info); }
-          self.success(user, info);
-        }
+      
+          self._loadUserProfile(token, tokenSecret, params, function(err, profile) {
+            if (err) { return self.error(err); }
         
+            function verified(err, user, info) {
+              if (err) { return self.error(err); }
+              if (!user) { return self.fail(info); }
+              
+              info = info || {};
+              if (state) { info.state = state; }
+              self.success(user, info);
+            }
+        
+            try {
+              if (self._passReqToCallback) {
+                var arity = self._verify.length;
+                if (arity == 6) {
+                  self._verify(req, token, tokenSecret, params, profile, verified);
+                } else { // arity == 5
+                  self._verify(req, token, tokenSecret, profile, verified);
+                }
+              } else {
+                var arity = self._verify.length;
+                if (arity == 5) {
+                  self._verify(token, tokenSecret, params, profile, verified);
+                } else { // arity == 4
+                  self._verify(token, tokenSecret, profile, verified);
+                }
+              }
+            } catch (ex) {
+              return self.error(ex);
+            }
+          });
+        }
+      
+        // The request token has been exchanged for an access token.  Since the
+        // request token is a single-use token, that data can be removed from the
+        // store.
         try {
-          if (self._passReqToCallback) {
-            var arity = self._verify.length;
-            if (arity == 6) {
-              self._verify(req, token, tokenSecret, params, profile, verified);
-            } else { // arity == 5
-              self._verify(req, token, tokenSecret, profile, verified);
-            }
-          } else {
-            var arity = self._verify.length;
-            if (arity == 5) {
-              self._verify(token, tokenSecret, params, profile, verified);
-            } else { // arity == 4
-              self._verify(token, tokenSecret, profile, verified);
-            }
+          var arity = self._requestTokenStore.destroy.length;
+          if (arity == 4) {
+            self._requestTokenStore.destroy(req, oauthToken, meta, destroyed);
+          } else { // arity == 3
+            self._requestTokenStore.destroy(req, oauthToken, destroyed);
           }
         } catch (ex) {
           return self.error(ex);
         }
       });
-    });
+    }
+    
+    try {
+      var arity = self._requestTokenStore.get.length;
+      if (arity == 4) {
+        this._requestTokenStore.get(req, oauthToken, meta, loaded);
+      } else { // arity == 3
+        this._requestTokenStore.get(req, oauthToken, loaded);
+      }
+    } catch (ex) {
+      return this.error(ex);
+    }
   } else {
     // In order to authenticate via OAuth, the application must obtain a request
     // token from the service provider and redirect the user to the service
@@ -221,16 +247,34 @@ OAuthStrategy.prototype.authenticate = function(req, options) {
       //       true, if the server supports OAuth 1.0a.
       //       { oauth_callback_confirmed: 'true' }
 
-      if (!req.session[self._key]) { req.session[self._key] = {}; }
-      req.session[self._key].oauth_token = token;
-      req.session[self._key].oauth_token_secret = tokenSecret;
+      function stored(err) {
+        if (err) { return self.error(err); }
 
-      var parsed = url.parse(self._userAuthorizationURL, true);
-      parsed.query.oauth_token = token;
-      utils.merge(parsed.query, self.userAuthorizationParams(options));
-      delete parsed.search;
-      var location = url.format(parsed);
-      self.redirect(location);
+        var parsed = url.parse(self._userAuthorizationURL, true);
+        parsed.query.oauth_token = token;
+        if (!params.oauth_callback_confirmed && callbackURL) {
+          // NOTE: If oauth_callback_confirmed=true is not present when issuing a
+          //       request token, the server does not support OAuth 1.0a.  In this
+          //       circumstance, `oauth_callback` is passed when redirecting the
+          //       user to the service provider.
+          parsed.query.oauth_callback = callbackURL;
+        }
+        utils.merge(parsed.query, self.userAuthorizationParams(options));
+        delete parsed.search;
+        var location = url.format(parsed);
+        self.redirect(location);
+      }
+
+      try {
+        var arity = self._requestTokenStore.set.length;
+        if (arity == 5) {
+          self._requestTokenStore.set(req, token, tokenSecret, meta, stored);
+        } else { // arity == 4
+          self._requestTokenStore.set(req, token, tokenSecret, stored);
+        }
+      } catch (ex) {
+        return self.error(ex);
+      }
     });
   }
 };
@@ -354,7 +398,5 @@ OAuthStrategy.prototype._createOAuthError = function(message, err) {
 };
 
 
-/**
- * Expose `OAuthStrategy`.
- */
+// Expose constructor.
 module.exports = OAuthStrategy;

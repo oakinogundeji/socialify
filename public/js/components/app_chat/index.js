@@ -1,4 +1,4 @@
-module.exports = function ($, socket) {
+module.exports = function (jQ, socket) {
   return {
     template: require('./template.html'),
     data: function () {
@@ -39,9 +39,10 @@ module.exports = function ($, socket) {
       }
     },
     events: {},
-    ready: function () {
+    created: function () {
       var self = this;
-      //socket.emit('getChatMsgs', this.userProfileInfo.email, this.chatTarget);
+      console.log('requesting for available online friends');
+      socket.emit('getOnlineFriends');
       socket.on('availableChatMsgs', function (msgs) {
         console.log('chat msgs received from server involving ' + self.userProfileInfo.email +
         ' and ' + self.chatTarget + ' are ' + msgs);
@@ -51,10 +52,47 @@ module.exports = function ($, socket) {
         });
       });
       //-----------------------------------------------------
-      socket.on('updateOnlineFriends', function () {
-        return socket.emit('getOnlineFriends');
+      socket.on('nowOnline', function (newfriend) {
+        console.log('notified that a new friend has come online', newfriend);
+        console.log('initial friend list', self.onlineFriends);
+        console.log('nuber of freiends already online', self.onlineFriends.length);
+        var hasFrnd = false;
+        self.onlineFriends.forEach(function (friend) {
+          if(friend.email == newfriend.email) {
+            return hasFrnd = true;
+          }
+          return null;
+        });
+        console.log('hasFrnd', hasFrnd);
+        if(hasFrnd) {
+          console.log('friend already exists online, returning null');
+          return null;
+        }
+        self.onlineFriends.push(newfriend);
+        return console.log('updated friend list', self.onlineFriends);
       });
-      socket.emit('getOnlineFriends');
+      socket.on('nowOffline', function (friendEmail) {
+        console.log('received now offline event about', friendEmail);
+        var
+          hasFrnd = false,
+          targIndx;
+        self.onlineFriends.forEach(function (friend, indx) {
+          if(friend.email == friendEmail) {
+            targIndx = indx;
+            return hasFrnd = true;
+          }
+          return null;
+        });
+        console.log('initial online friend list', self.onlineFriends);
+        if(hasFrnd) {
+          console.log('about to delete ' + friendEmail +' from online friends list');
+          self.onlineFriends.splice(targIndx, 1);
+          console.log('deleted ' + friendEmail + ' from online friends list');
+          return console.log('final online friends list ', self.onlineFriends);
+        }
+        console.log('friend does not exist online so no action taken');
+        return null;
+      });
       //------------------------------------------------------
       socket.on('availableOnlineFriends', function (data) {
         //first empty the lsit of avaliable online friends

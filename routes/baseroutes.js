@@ -63,10 +63,11 @@ router.route('/login').
   }).
   post(function(req, res, next) {
     passport.authenticate('local-login', function(err, user, info) {
-      if (err) {
+      if(err) {
+        console.error(err);
         return next(err); // will generate a 500 error
       }
-      if (!user) {
+      if(!user) {
         return res.status(409).render('pages/login', {errMsg: info.errMsg});
       }
       req.login(user, function(err){
@@ -85,10 +86,10 @@ router.route('/signup').
   }).
   post(function(req, res, next) {
     passport.authenticate('local-signup', function(err, user, info) {
-      if (err) {
+      if(err) {
         return next(err); // will generate a 500 error
       }
-      if (!user) {
+      if(!user) {
         return res.status(409).render('pages/signup', {errMsg: info.errMsg});
       }
       req.login(user, function(err){
@@ -126,13 +127,14 @@ router.get('/logout', function (req, res) {
 //---------------------------reset password route------------------------------
 router.route('/recoverpwd').
   get(function (req, res) {
-    return res.status(200).render('pages/resetpwd');
+    return res.status(200).render('pages/recoverpwd');
   }).
   post(function (req, res) {
     console.log('reset pwd req received from user', req.body);
     UserModel.findOne({firstName: req.body.fname,
     lastName: req.body.lname, email: req.body.email}, function (err, user) {
       if(err) {
+        console.error(err);
         throw(err);
       }
       if(!user) {
@@ -146,11 +148,11 @@ router.route('/recoverpwd').
           to: pwdRecoveryEmail,
           from: 'support@socialify.net',
           subject: 'Password Recovery',
-          text: 'Your new password is ' + newPwd +' we suggest you change it on next login'
+          text: 'Your new password is ' + newPwd +' we suggest you change it on next login!'
         };
         mailer.sendMail(email, function(err, res) {
           if(err) {
-              console.log(err)
+              console.error(err);
           }
           console.log(res);
         });

@@ -12,15 +12,13 @@
  */
 function InternalOAuthError(message, err) {
   Error.call(this);
-  Error.captureStackTrace(this, arguments.callee);
-  this.name = 'InternalOAuthError';
+  Error.captureStackTrace(this, this.constructor);
+  this.name = this.constructor.name;
   this.message = message;
   this.oauthError = err;
 }
 
-/**
- * Inherit from `Error`.
- */
+// Inherit from `Error`.
 InternalOAuthError.prototype.__proto__ = Error.prototype;
 
 /**
@@ -43,7 +41,5 @@ InternalOAuthError.prototype.toString = function() {
 };
 
 
-/**
- * Expose `InternalOAuthError`.
- */
+// Expose constructor.
 module.exports = InternalOAuthError;

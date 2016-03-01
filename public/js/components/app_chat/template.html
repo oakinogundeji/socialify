@@ -1,9 +1,9 @@
-<section id="app-chat" class="row">
-  <div id="chat-address-bar">
-    <h1>{{userProfileInfo.fname}} {{userProfileInfo.lname}}: {{userProfileInfo.email}} / {{chatTarget}}</h1>
-    <span class="badge">12</span>
+<section id="app-chat" class="col-xs-12 col-md-5">
+  <div id="chat-address-bar" class="row">
+    <h3 class="text-center">{{userProfileInfo.fname}} {{userProfileInfo.lname}}:
+      {{userProfileInfo.email}} / {{chatTarget}}</h3>
   </div>
-  <div id="chat-box">
+  <div id="chat-box" class="col-xs-8">
     <div id="chat-box-display">
       <div v-for="item in chatMsgs">
         <p>{{item.from}}: {{item.msg}}</p>
@@ -11,17 +11,23 @@
     </div>
     <form id="chat-box-input" class="form-group"
     @submit.stop.prevent="sendChatMsg">
-      <input type="text" v-model="newMsg" class="form-control">
-      <input class="btn btn-success btn-default" value="Send!" type="button"
-      @click.stop.prevent="sendChatMsg">
-      <input class="btn btn-danger btn-default" value="Discard!" type="button"
-      @click.stop.prevent="discardChatMsg">
+      <div class="form-group">
+        <input type="text" v-model="newMsg" class="form-control">
+      </div>
+      <div class="form-group">
+        <input class="btn btn-success btn-default" value="Send" type="button"
+        @click.stop.prevent="sendChatMsg">
+        <input class="btn btn-danger btn-default" value="Cancel" type="button"
+        @click.stop.prevent="discardChatMsg">
+      </div>
     </form>
     <span v-show="showWarnMsg" class="errMsg">Please choose a recipient or discard the message!</span>
   </div>
-  <div id="chat-status-box">
-    <div id="chat-notifications"></div>
-    <div id="chat-online-friends">
+  <div id="chat-status-box" class="col-xs-4">
+    <div class="row">
+      <h3 class="text-info text-center">Online friends</h3>
+    </div>
+    <div id="chat-online-friends" class="row">
       <div v-for="item in onlineFriends">
         <a href="" @click.stop.prevent="setChatTarget(item)"><p>{{item.firstName}} {{item.lastName}}: {{item.email}}</p></a>
       </div>

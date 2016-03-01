@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "mocha test",
-    "start": "npm run build && node server.js",
+    "start": "npm run build && forever start --minUptime 1000 --spinSleepTime 1000 server.js",
     "start-dev": "nodemon server.js",
     "build": "browserify -t partialify ./public/js/frontend.js -o ./public/js/main.js",
     "watch": "watchify -t partialify ./public/js/frontend.js -o ./public/js/main.js -dv"
@@ -17,9 +17,11 @@
   "license": "MIT",
   "dependencies": {
     "async": "^1.5.2",
+    "barn": "^0.2.0",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.14.2",
     "browserify": "^13.0.0",
+    "compression": "^1.6.1",
     "connect-mongo": "^1.1.0",
     "ejs": "^2.4.1",
     "express": "^4.13.4",
@@ -51,6 +53,7 @@
   "devDependencies": {
     "clarify": "^1.0.5",
     "faker": "^3.0.1",
+    "mocha": "^2.4.5",
     "morgan": "^1.6.1",
     "partialify": "^3.1.5",
     "should": "^8.0.1",

@@ -1,0 +1,16 @@
+{
+  "host": "<replace with production host>",
+  "productionURL": "<replace with production URL>",
+  "env": "production",
+  "dBURL": "<replace with production dbase url>",
+  "sessionSecret": "qwertyuiop123456789",
+  "S3": {
+    "bucket": "<replace with your bucket>",
+    "key": "<replace with your key>",
+    "secret": "<replace with your secret>"
+  },
+  "SendGrid": {
+    "username": "<replace with your user name>",
+    "password": "<replace with your password>"
+  }
+}
