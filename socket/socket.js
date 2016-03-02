@@ -36,6 +36,10 @@ io.on('connection', function (socket) {
         console.error(err);
         throw(err);
       }
+      if(!user.hasPage) {
+        console.log('no page for logged on user');
+        return socket.emit('noUserPageInfo');
+      }
       var query;
       if(user.hasPage) {
         query = PagesModel.findOne({owner: ID});

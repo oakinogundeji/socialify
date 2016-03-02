@@ -163,7 +163,8 @@ router.route('/recoverpwd').
             throw(err);
           }
           console.log('new user pwd from pwd reset', user.password);
-          return res.status(302).redirect('/login');
+          var infoMsg = 'A new password has been sent to your email account!';
+          return res.status(302).render('pages/login', {errMsg: infoMsg});
         });
     });
   });
