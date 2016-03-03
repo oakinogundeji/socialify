@@ -27,6 +27,7 @@
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "^1.14.2",
     "browserify": "^13.0.0",
+    "clarify": "^1.0.5",
     "compression": "^1.6.1",
     "connect-mongo": "^1.1.0",
     "ejs": "^2.4.1",
@@ -42,6 +43,7 @@
     "mongoose-autopopulate": "^0.4.0",
     "mongoose-deep-populate": "^2.0.3",
     "mongoose-paginate": "^5.0.0",
+    "morgan": "^1.6.1",
     "nodemailer": "^2.1.0",
     "nodemailer-sendgrid-transport": "^0.2.0",
     "partialify": "^3.1.5",
@@ -58,10 +60,8 @@
     "vue-router": "^0.7.10"
   },
   "devDependencies": {
-    "clarify": "^1.0.5",
     "faker": "^3.0.1",
     "mocha": "^2.4.5",
-    "morgan": "^1.6.1",
     "should": "^8.0.1",
     "supertest": "^1.1.0",
     "watchify": "^3.6.1"
