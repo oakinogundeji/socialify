@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "description": "A generic social network",
   "main": "server.js",
+  "browserify": {
+    "transform": [
+      "partialify"
+    ]
+  },
   "directories": {
     "test": "tests"
   },
