@@ -14,7 +14,7 @@
   "scripts": {
     "test": "NODE_ENV=test mocha test",
     "prestart": "npm run build",
-    "start": "node server.js",
+    "start": "forever start --minUptime 1000 --spinSleepTime 1000 server.js",
     "start-dev": "nodemon server.js",
     "build": "browserify -t partialify ./public/js/frontend.js -o ./public/js/main.js",
     "watch": "watchify -t partialify ./public/js/frontend.js -o ./public/js/main.js -dv"
@@ -35,6 +35,7 @@
     "express-ejs-layouts": "^2.0.0",
     "express-paginate": "^0.1.0",
     "express-session": "^1.13.0",
+    "forever": "^0.15.1",
     "formidable": "^1.0.17",
     "gm": "^1.21.1",
     "jquery": "^2.2.0",
