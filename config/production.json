@@ -1,6 +1,5 @@
 {
-  "host": "54.68.94.131",
-  "devURL": "http://54.68.94.131:3030",
+  "host": "https://socialify.herokuapp.com",
   "env": "production",
   "dBURL": "mongodb://telios:jusankubo123@ds013738.mongolab.com:13738/socialify",
   "sessionSecret": "qwertyuiop123456789",
