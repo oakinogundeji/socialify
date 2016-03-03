@@ -7,7 +7,7 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "mocha test",
+    "test": "NODE_ENV=test mocha test",
     "start": "npm run build && forever start --minUptime 1000 --spinSleepTime 1000 server.js",
     "start-dev": "nodemon server.js",
     "build": "browserify -t partialify ./public/js/frontend.js -o ./public/js/main.js",

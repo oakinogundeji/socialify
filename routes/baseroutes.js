@@ -138,8 +138,9 @@ router.route('/recoverpwd').
         throw(err);
       }
       if(!user) {
+        console.error('user provided incorrect credentials');
         var errMsg = 'Invalid credentials, please confirm your data!';
-        return res.status(409).render('pages/resetpwd', {errMsg: errMsg})
+        return res.status(409).render('pages/recoverpwd', {errMsg: errMsg});
       }
       var
         pwdRecoveryEmail = user.pwdRecoveryEmail,
