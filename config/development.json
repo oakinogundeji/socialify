@@ -5,12 +5,12 @@
   "dBURL": "mongodb://localhost/socialify",
   "sessionSecret": "qwertyuiop123456789",
   "S3": {
-    "bucket": "<replace with your bucket>",
-    "key": "<replace with your key>",
-    "secret": "<replace with your secret>"
+    "bucket": "teliossocialify",
+    "key": "AKIAIVHLHQ3R33JHA6AQ",
+    "secret": "Ulvlj4fm6WMz0eZBxMZ2KJuIRpPWlHzYI8E7CtBw"
   },
   "SendGrid": {
-    "username": "<replace with your user name>",
-    "password": "<replace with your password>"
+    "username": "oakinogundeji",
+    "password": "qwerty123?@"
   }
 }

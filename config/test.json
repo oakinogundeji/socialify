@@ -1,8 +1,8 @@
 {
-  "host": "54.68.94.131",
-  "devURL": "http://54.68.94.131:3030",
-  "env": "production",
-  "dBURL": "mongodb://telios:jusankubo123@ds013738.mongolab.com:13738/socialify",
+  "host": "localhost",
+  "devURL": "http://localhost:3030",
+  "env": "test",
+  "dBURL": "mongodb://localhost/testify",
   "sessionSecret": "qwertyuiop123456789",
   "S3": {
     "bucket": "teliossocialify",
