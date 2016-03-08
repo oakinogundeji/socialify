@@ -1,4 +1,4 @@
-module.exports = function (jQ) {
+module.exports = function (jQ, socket) {
   return {
     template: require('./template.html'),
     data: function () {
@@ -16,8 +16,9 @@ module.exports = function (jQ) {
         editLname: '',
         editEmail: '',
         confirmPwd: '',
-        pixUploadUrl: '/users/profilepix/' + this.userEmail,
-        dataUploadURL: '/users/' + this.userEmail +'/edit',
+        pixUploadURL: '/users/profilepix/',
+        profileUpdateURLPrefix: '/users/',
+        profileUpdateURLSuffix: '/edit',
         pwdChangeURL: '/users/' + this.userEmail +'/changepwd',
         showErrMsg: false,
         showProfileEditBtn: true,
@@ -27,7 +28,9 @@ module.exports = function (jQ) {
         currentPwd: '',
         newPwd: '',
         confirmNewPwd: '',
-        showPwdChngErrMsg: false
+        showPwdChngErrMsg: false,
+        showWarningMsg: false,
+        showPwdChngSuccessMsg: false
       };
     },
     computed: {
@@ -61,36 +64,47 @@ module.exports = function (jQ) {
           this.showPwdChange = false;
         }
         console.log('edit profile button clicked');
-        this.showPwdEditBtn = this.showProfileEditBtn = false;
-        return this.showEdit = true;
+        //this.showPwdEditBtn = this.showProfileEditBtn = false;
+        return jQ('#edit-profile-details-Modal-Btn').trigger('click');
       },
       submitEdit: function () {
         console.log('first name', this.editFname);
         console.log('last name', this.editLname);
         console.log('email', this.editEmail);
+        if(this.$els.newUserPix.value.trim() &&
+      (!(this.editFname.trim() || this.editLname.trim()))) {
+          return this.submitNewPix();
+        }
         if(this.editFname.trim() || this.editLname.trim() ||
           this.editEmail.trim()) {
-            this.showProfileEditBtn = true;
+            //this.showProfileEditBtn = true;
             if(this.$els.newUserPix.value.trim()) {
               this.submitNewPix();
             }
-          this.$http.post(this.dataUploadURL, {
+            var URL = this.profileUpdateURLPrefix + this.email +
+             this.profileUpdateURLSuffix;
+          this.$http.post(URL, {
             firstName: this.editFname || null,
             lastName: this.editLname || null,
             email: this.editEmail || null
           }).
             then(function (res) {
               console.log('response from edit profile data', res.data);
-              return this.showEdit = false;
+              return jQ('#close-edit-profile-details-Modal-btn').trigger('click');
             }.bind(this), function (info) {
-              this.showEdit = false;
-              return console.log('info obj', info);
+              console.log('info obj', info);
+              jQ('#show-err-msg').hide();
+              this.showErrMsg = true;
+              return jQ('#show-err-msg').fadeIn(200).fadeOut(3000);
             }.bind(this));
           return this.editFname = this.editLname = this.editEmail = '';
         }
-        this.showProfileEditBtn = true;
-        this.showErrMsg = true;
-        return console.log('submit edit profil buttion clicked!');
+        else {
+          //this.showProfileEditBtn = true;
+          jQ('#show-warning-msg').hide();
+          this.showWarningMsg = true;
+          return jQ('#show-warning-msg').fadeIn(200).fadeOut(3000);
+        }
       },
       submitNewPix : function () {
         console.log('value of file elem', this.$els.newUserPix.value);
@@ -101,11 +115,12 @@ module.exports = function (jQ) {
         if(this.$els.newUserPix.value.trim()) {
           var
             xhr = new XMLHttpRequest(),
-            form = new FormData();
+            form = new FormData(),
+            URL = this.pixUploadURL + this.email;
           //NB 'profilePix' is the form field that holds the uploaded pix
           form.append('profilePix', this.$els.newUserPix.files[0]);
           console.log('upload form data', form);
-          xhr.open('POST', this.pixUploadUrl);
+          xhr.open('POST', URL);
           /*xhr.upload.addEventListener('progress', function (e) {
             if(e.lengthComputable) {
               var pcent = Math.round((e.loaded * 100) / e.total);
@@ -119,22 +134,27 @@ module.exports = function (jQ) {
             return console.log('info obj', info);
           }.bind(this));
           xhr.send(form);
-            return this.$els.newUserPix.value = null;
+            this.$els.newUserPix.value = null;
+            return jQ('#close-edit-profile-details-Modal-btn').trigger('click');
         }
-        return this.showErrMsg = true;
+        else {
+          jQ('#show-err-msg').hide();
+          this.showErrMsg = true;
+          return jQ('#show-err-msg').fadeIn(200).fadeOut(3000);
+        }
       },
       discardEdit: function () {
         console.log('discard edit profile button clicked');
         this.showPwdEditBtn = this.showProfileEditBtn = true;
-        return this.showEdit = false;
+        return jQ('#close-edit-profile-details-Modal-btn').trigger('click');
       },
       editPwd: function () {
         if(this.showEdit) {
           this.showEdit = false;
         }
         console.log('edit pwd button clicked');
-        this.showPwdEditBtn = this.showProfileEditBtn = false;
-        return this.showPwdChange = true;
+        //this.showPwdEditBtn = this.showProfileEditBtn = false;
+        return jQ('#chng-pwd-Modal-Btn').trigger('click');
       },
       submitPwdChange: function () {
         if(this.currentPwd.trim() && this.newPwd.trim() &&
@@ -145,31 +165,56 @@ module.exports = function (jQ) {
               }).
                 then(function (res) {
                   console.log('response from pwd change', res.data);
-                  this.showPwdChange = false;
-                  return this.showPwdEditBtn = this.showProfileEditBtn = true;
+                  //this.showPwdChange = false;
+                  jQ('#close-chng-pwd-Modal-btn').trigger('click');
+                  jQ('#show-pwd-chng-success-msg').hide();
+                  this.showPwdChngSuccessMsg = true;
+                  return jQ('#show-pwd-chng-success-msg').fadeIn(200).fadeOut(3000);
                 }.bind(this), function (info) {
+                  console.log('info obj', info);
+                  jQ('#show-pwd-err-msg').hide();
                   this.showPwdErrMsg = true;
-                  return console.log('info obj', info);
+                  return jQ('#show-pwd-err-msg').fadeIn(200).fadeOut(3000);
                 }.bind(this));
             }
-            this.currentPwd = this.newPwd = this.confirmNewPwd = '';
-            return this.showPwdChngErrMsg = true;
+            else {
+              this.currentPwd = this.newPwd = this.confirmNewPwd = '';
+              jQ('#show-pwd-chng-err-msg').hide();
+              this.showPwdChngErrMsg = true;
+              return jQ('#show-pwd-chng-err-msg').fadeIn(200).fadeOut(3000);
+            }
           }
-        return this.showPwdChngErrMsg = true;
+          else {
+            jQ('#show-pwd-chng-err-msg').hide();
+            this.showPwdChngErrMsg = true;
+            return jQ('#show-pwd-chng-err-msg').fadeIn(200).fadeOut(3000);
+          }
       },
       discardPwdChange: function () {
         console.log('discard pwd change');
         this.showPwdEditBtn = this.showProfileEditBtn = true;
-        return this.showPwdChange = false;
+        return jQ('#close-chng-pwd-Modal-btn').trigger('click');
       }
     },
     events: {
       "profileCreated": function () {
         this.hasPage = true;
         return this.hasPhoto = true;
+      },
+      'updateProfileInfo': function (data) {
+        this.fname = data.fname;
+        this.lname = data.lname;
+        this.fullname = data.fname +' '+ data.lname;
+        this.status = data.status;
+        this.email = data.email;
+        this.hasPage = data.hasPage;
       }
     },
     ready: function () {
+      socket.on('updatedUserProfile', function () {
+        console.log('profile has been updated');
+        return this.$dispatch('getUpdateDProfile');//require for realtime profile update
+      }.bind(this));
       this.fname = this.userProfileInfo.fname;
       this.lname = this.userProfileInfo.lname;
       this.fullname = this.userProfileInfo.fname +' '+ this.userProfileInfo.lname;

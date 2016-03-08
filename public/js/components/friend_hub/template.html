@@ -13,10 +13,18 @@
   <section class="row" id="display-friend-hub-posts">
     <ul v-show="friendHubData.friendPosts" class="list-group">
       <li v-for="item in friendHubData.friendPosts" class="list-group-item">
+        <div class="row">
+          <span v-show="showCommentsErrMsg" class="text-danger" id="show-comment-err-msg">
+            There was an error submitting your comment,
+            please try later!</span>
+          <span v-show="showLikeErrMsg" class="text-danger" id="show-like-err-msg">
+            There was an error performing the 'like', please try later!</span>
+        </div>
         <div class="well">
           <p v-show="item.title">Title: {{item.title}}</p>
           <p v-show="item.text">Story: {{item.text}}</p>
-          <p v-show="item.img">Image: <figure v-show="item.img"><img :src=item.img alt={{item.title}}'s image'></figure></p>
+          <p v-show="item.img">Image: <figure v-show="item.img"><img :src=item.img
+            alt={{item.title}}'s image' class="img-responsive"></figure></p>
           <p v-show="item.taggedFriends">Tagged: <span v-for="item in item.taggedFriends">
             <i>{{item}} </i>
           </span></p>
@@ -24,7 +32,8 @@
           <div class="post-enhancements">
             <span class="fa fa-comments fa-2x" data-toggle="modal" data-target="#friend-comments-Modal"
               @click="commentDetails(item)"></span>
-            <span class="fa fa-heart fa-2x" @click.stop.prevent="likePost(item)"></span><span>{{item.likes}}</span>
+            <span class="fa fa-heart fa-2x" @click.stop.prevent="likePost(item)"></span>
+            <span>{{item.likes}}</span>
           </div>
           <!--Start display friend posts comments-->
           <section id="display-friend-posts-comments">
@@ -35,17 +44,18 @@
                   <span v-show="item.author">Author: {{item.author}}</span>
                 </div>
                 <div class="comment-enhancements">
-                  <span class="fa fa-heart" @click.stop.prevent="likeFriendPostComment(item)"></span><span>{{item.likes}}</span>
+                  <div class="row" v-show="showCommentsLikeErrMsg">
+                    <span class="text-danger"
+                    id="show-comments-like-err-msg">
+                        There was an error performing the 'like', please try later!</span>
+                  </div>
+                  <span class="fa fa-heart" @click.stop.prevent="likeFriendPostComment(item, $event)"></span>
+                  <span>{{item.likes}}</span>
                 </div>
               </li>
             </ul>
           </section>
           <!--End display friend posts comments-->
-          <span v-show="showCommentSuccessMsg">Your comment was successfully submitted!</span>
-          <span v-show="showCommentErrMsg">There was an error submitting your comment,
-            please try later!</span>
-          <span v-show="showLikeErrMsg">There was an error performing the 'like',
-            please try later!</span>
         </div>
       </li>
     </ul>
@@ -64,6 +74,10 @@
         <h4 class="modal-title" id="friend-comments-Modal-Label">Leave a comment...</h4>
       </div>
       <div class="modal-body">
+        <div>
+          <span v-show="showCommentsWarning" class="text-warning" id="show-comments-warning">
+            Please make a comment or discard the action!</span>
+        </div>
         <form>
           <div class="form-group">
             <label for="post-comment">What do you think about this post?</label>
@@ -73,9 +87,6 @@
         </form>
       </div>
       <div class="modal-footer">
-        <div>
-          <span v-show="showCommentsWarning">Please make a comment or discard the action!</span>
-        </div>
         <button type="submit" class="btn btn-success btn-default" data-dismiss="modal"
         @click.stop.prevent="submitFriendComment">Done!</button>
         <button type="submit" class="btn btn-danger btn-default" data-dismiss="modal"

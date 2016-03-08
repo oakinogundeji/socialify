@@ -8,6 +8,7 @@ module.exports = function (jQ, socket) {
         showLikeErrMsg: false,
         newFriendPostComment: '',
         showCommentsWarning: false,
+        showCommentsLikeErrMsg: false,
         friendPostLikesURLprefix: '/users/posts/',
         friendPostLikesURLsuffix: '/likes',
         friendPostCommentInfo: {},
@@ -53,16 +54,21 @@ module.exports = function (jQ, socket) {
           }.bind(this), function (info) {
             console.log('info obj', info);
             console.log('failed to increase like count of ', item.title);
-            return this.showLikeErrMsg = true;
+            jQ('#show-like-err-msg').hide();
+            this.showLikeErrMsg = true;
+            return jQ('#show-like-err-msg').fadeIn(200).fadeOut(3000);
           }.bind(this));
       },
-      likeFriendPostComment: function (item) {
+      likeFriendPostComment: function (item, e) {
         console.log('comment by ' + item.author +' was liked once');
         console.log('intial like count of is ' + item.likes);
+        console.log('dom elem ', e.target);
         var
+          eDiv = jQ(e.target).parent().find('div')[0],
           commentID = item.commentID,
           postID = item.postID,
           author = item.author;
+        console.log('eDiv is', eDiv);
         this.$http.get(this.friendCommentsLikesURL, {
           commentID: commentID
         }).
@@ -76,7 +82,8 @@ module.exports = function (jQ, socket) {
           }.bind(this), function (info) {
             console.log('info obj', info);
             console.log('failed to increase like count of comment by ', author);
-            return this.showLikeErrMsg = true;
+            jQ(eDiv).hide();
+            return jQ(eDiv).fadeIn(200).fadeOut(3000);
           }.bind(this));
       },
       submitFriendComment: function () {
@@ -111,7 +118,9 @@ module.exports = function (jQ, socket) {
             }.bind(this), function (info) {
               this.newFriendPostComment = '';
               console.log('info obj', info);
-              return this.showCommentErrMsg = true;
+              jQ('#show-comment-err-msg').hide();
+              this.showCommentsErrMsg = true;
+              return jQ('#show-comment-err-msg').fadeIn(200).fadeOut(3000);
             }.bind(this));
           jQ('#close-friend-comments-Modal-btn').trigger('click');
           return console.log('submit comments on friend post btn clicked');

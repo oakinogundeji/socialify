@@ -25,13 +25,45 @@
           <li>Email address: {{email}}</li>
         </ul>
       </section>
-      <figure><img :src=userProfileInfo.photo alt="{{fname}}'s profile photo"></figure>
+      <figure><img :src=userProfileInfo.photo alt="{{fname}}'s profile photo"
+        class="img-responsive"></figure>
     </div>
     <a href="" class="btn btn-warning btn-default"
-    @click.stop.prevent="editProfile" v-show="showProfileEditBtn">Edit profile details...</a>
-    <section v-show="showEdit">
-      <h2>Edit your profile information</h2>
-      <div>
+    @click.stop.prevent="editProfile" v-show="showProfileEditBtn">
+    Edit profile details...</a>
+    <a href="" class="btn btn-danger btn-default" @click.stop.prevent="editPwd"
+     v-show="showPwdEditBtn">Change your password</a>
+     <div class="row">
+       <span id="edit-profile-details-Modal-Btn" data-toggle="modal"
+       data-target="#edit-profile-details-Modal"></span>
+       <span id="chng-pwd-Modal-Btn" data-toggle="modal"
+       data-target="#chng-pwd-Modal"></span>
+       <span v-show="showPwdChngSuccessMsg" class="text-success" id="show-pwd-chng-success-msg">
+         Your password was successfully changed!</span>
+     </div>
+    <!--<pre>{{$data | json}}</pre>-->
+  </template>
+  <router-view :user-email="email"></router-view>
+</section>
+<!--start Edit profile details modal-->
+<div class="modal fade" id="edit-profile-details-Modal" tabindex="-1"
+role="dialog" aria-labelledby="editProfileDetailsModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="close-edit-profile-details-Modal-btn"
+        data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="edit-profile-details-Label">
+          Edit your profile information...</h4>
+      </div>
+      <div class="modal-body" id="edit-profile-details-modal-body">
+        <div class="row">
+          <span v-show="showErrMsg" class="text-danger" id="show-err-msg">
+            There was an error saving the edits, please try later!</span>
+          <span v-show="showWarningMsg" class="text-warning" id="show-warning-msg">
+            Please fill the fields with valid data or discard the attempt!</span>
+        </div>
         <form>
           <div class="form-group">
             <label for="first-name">First Name</label>
@@ -55,19 +87,36 @@
             <input type="file" id="profile-photo" v-el:new-user-pix>
             <div v-show="showUpload" class="file-upload-progress"></div>
           </div>
-          <button type="submit" class="btn btn-success btn-default"
-          @click.stop.prevent="submitEdit">Done!</button>
-          <button type="submit" class="btn btn-danger btn-default"
-          @click.stop.prevent="discardEdit">Discard!</button>
         </form>
-        <span v-show="showErrMsg">There was an error saving the edits, please try later!</span>
       </div>
-    </section>
-    <a href="" class="btn btn-danger btn-default" @click.stop.prevent="editPwd"
-     v-show="showPwdEditBtn">Change your password</a>
-    <section v-show="showPwdChange">
-      <h2>Change your password</h2>
-      <div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success btn-default"
+        @click.stop.prevent="submitEdit">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default"
+        @click.stop.prevent="discardEdit">Discard!</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!--end Edit profile details modal-->
+<!--start change pwd modal-->
+<div class="modal fade" id="chng-pwd-Modal" tabindex="-1"
+role="dialog" aria-labelledby="ChngPwdModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" id="close-chng-pwd-Modal-btn"
+        data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="chng-pwd-Modal-Label">Change your password</h4>
+      </div>
+      <div class="modal-body" id="chng-pwd-modal-body">
+        <div class="row">
+          <span v-show="showPwdErrMsg" class="text-danger" id="show-pwd-err-msg">
+            There was an error changing your password, please try later!</span>
+          <span v-show="showPwdChngErrMsg" class="text-warning" id="show-pwd-chng-err-msg">
+            Please fill all the fields with valid data or discard the attempt!</span>
+        </div>
         <form>
           <div class="form-group">
             <label for="first-name">Current Password</label>
@@ -82,16 +131,15 @@
             <input class="form-control" type="password" id="confirm-new-password"
             v-model="confirmNewPwd">
           </div>
-          <button type="submit" class="btn btn-success btn-default"
-          @click.stop.prevent="submitPwdChange">Done!</button>
-          <button type="submit" class="btn btn-danger btn-default"
-          @click.stop.prevent="discardPwdChange">Discard!</button>
         </form>
-        <span v-show="showPwdErrMsg">There was an error changing your password, please try later!</span>
-        <span v-show="showPwdChngErrMsg">Please fill all the fields with valid data or discard the attempt!</span>
       </div>
-    </section>
-    <!--<pre>{{$data | json}}</pre>-->
-  </template>
-  <router-view :user-email="email"></router-view>
-</section>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success btn-default"
+        @click.stop.prevent="submitPwdChange">Done!</button>
+        <button type="submit" class="btn btn-danger btn-default"
+        @click.stop.prevent="discardPwdChange">Discard!</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!--end change pwd modal-->

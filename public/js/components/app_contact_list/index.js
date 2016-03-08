@@ -27,7 +27,8 @@ module.exports = function (jQ) {
         friendListSearch: false,
         friendsListMsg: '',
         showFriendsListMsg: false,
-        showViewHubErrMsg: false
+        showViewHubErrMsg: false,
+        showFriendsListErrSpan: false
       };
     },
     props: ['hasFriends', 'friendsList'],
@@ -52,9 +53,10 @@ module.exports = function (jQ) {
               this.showSearchResultMsg = true;
               this.showLoading = false;
               if(typeof(res.data) == 'string') {
-                return this.searchResultMsg = res.data;
+                jQ('#search-result-msg').addClass('text-danger').hide();
+                this.searchResultMsg = res.data;
+                return jQ('#search-result-msg').fadeIn(200).fadeOut(3000);
               }
-              this.searchResultMsg = res.data.msg;
               this.showResultsList = true;
               res.data.data.forEach(function (friend) {
                 return this.resultsList.push(friend);
@@ -69,8 +71,9 @@ module.exports = function (jQ) {
             }.bind(this));
           return this.friendFirstName = this.friendLastName = this.friendEmail = '';
         }
+        jQ('#show-search-err-msg').hide();
         this.showErrMsg = true;
-        return console.log('submit friend search buttion clicked!');
+        return jQ('#show-search-err-msg').fadeIn(200).fadeOut(3000);
       },
       discardSearch: function () {
         this.friendFirstName = this.friendLastName = this.friendEmail = '';
@@ -84,7 +87,7 @@ module.exports = function (jQ) {
       },
       doSearch: function () {
         console.log('do search button clicked');
-        this.showFriendsList = false;
+        this.showFriendsList = this.friendListSearch = false;
         return this.showSearch = true;
       },
       enableFriendsList: function () {
@@ -112,7 +115,9 @@ module.exports = function (jQ) {
             //return this.$els.friendListBtn.textContent = 'Hide friend list...';
             return null;
         }
-        return null;
+        jQ('#show-friends-list-err-span').hide();
+        this.showFriendsListErrSpan = true;
+        return jQ('#show-friends-list-err-span').fadeIn(200).fadeOut(3000);
       },
       hideFriendsList: function () {
         this.showFriendsList = false;
@@ -182,8 +187,10 @@ module.exports = function (jQ) {
           console.log('query params', queryParams);
           console.log('filtered array', filteredArray);
           if(filteredArray.length < 1) {
+            jQ('#show-friends-list-msg').hide();
+            this.friendsListMsg = 'No friends exist with the provided details';
             this.showFriendsListMsg = true;
-            return this.friendsListMsg = 'No friends exist with the provided details';
+            return jQ('#show-friends-list-msg').fadeIn(200).fadeOut(3000);
           }
           return this.friendsListArray = filteredArray;
         }
@@ -215,7 +222,9 @@ module.exports = function (jQ) {
           return this.$dispatch('gotFriendHubData', res.data);
         }.bind(this), function (info) {
           console.log('info obj', info);
-          return this.showViewHubErrMsg = true;
+          jQ('#show-view-hub-err-msg').hide();
+          this.showViewHubErrMsg = true;
+          return jQ('#show-view-hub-err-msg').fadeIn(200).fadeOut(3000);
         }.bind(this));
       }
     },

@@ -45,6 +45,8 @@ function generateRandomFileName(filename) {
 *Module config
 */
 //-----------------------------------------------------------------------------
+//enable Vue internals
+Vue.config.debug = true;
 //Vue resource setup
 Vue.use(require('vue-resource'));
 Vue.http.options.root = '/root';
@@ -88,7 +90,7 @@ var App = Vue.extend({
       appTrends: [],
       chatVisible: false,
       friendHubData: {},
-      showChatBtn: false
+      showChatBtn: true
     };
   },
   computed: {
@@ -113,6 +115,10 @@ var App = Vue.extend({
       console.log('new page created event received by base app');
       this.hasPage = true;
       return console.log('updated value for has page from base app', this.hasPage);
+    },
+    'getUpdateDProfile': function () {
+      console.log('getting updated user profile info');
+      return socket.emit('getUserProfileInfo');
     },
     'userStatusChanged': function () {
       console.log('base app notified of user status change');
@@ -174,7 +180,9 @@ var App = Vue.extend({
       return this.userActivity.unshift(notification);
     },
     'addedFriend': function (friend) {
-      this.showChatBtn = true;
+      if(!this.showChatBtn) {
+        this.showChatBtn = true;
+      }
       console.log('base app notified of user liking a comment by', friend);
       var notification = 'You just added a new friend ' +'"'+
         friend +'"';
@@ -214,6 +222,7 @@ var App = Vue.extend({
     //check if logged in user already has a 'page'
     if(!appStateGlobal.profileInfo.hasPage) {
         //if not - set page to '/profile'
+        this.showChatBtn = false;
         this.$route.router.go({name: 'profile'});
       }
       //else - set page to '/hub'
@@ -291,7 +300,7 @@ var App = Vue.extend({
         this.userMetaData.profileInfo.hasFriends = data.hasFriends;
         this.userMetaData.profileInfo.hasPage = data.hasPage;
         this.userMetaData.profileInfo.friendsList = data.friendsList;
-        return null;
+        return this.$broadcast('updateProfileInfo', this.userMetaData.profileInfo);;
       }.bind(this));
       //when friend status changes
       socket.on('statusChangeNotification', function (data) {
@@ -345,7 +354,7 @@ var App = Vue.extend({
 var
   Hub = require('./components/app_hub')($, socket, generateRandomFileName),
   FriendHub = require('./components/friend_hub')($, socket),
-  Profile = require('./components/app_profile')($),
+  Profile = require('./components/app_profile')($, socket),
   Chat = require('./components/app_chat')($, socket),
   Cr8Hub = require('./components/app_newhub')($, socket),
   UploadPix = require('./components/app_profilepix')($, socket);

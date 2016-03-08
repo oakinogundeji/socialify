@@ -1,7 +1,8 @@
 <section>
   <section class="row" id="page-meta-data">
     <div class="col-md-6">
-      <h3>Status: <small>{{userPageInfo.pageMetaData.status}}</small> <a href="#" class="btn btn-info btn-default pull-right"
+      <h3>Status: <small>{{userPageInfo.pageMetaData.status}}</small>
+        <a href="#" class="btn btn-info btn-default pull-right"
       @click.stop.prevent="editStatus" v-show="chngStatusBtn">Change your status!</a></h3>
     </div>
     <div v-show="changeStatus">
@@ -17,11 +18,15 @@
         @click.stop.prevent="discardStatus">Discard!</button>
       </form>
     </div>
-    <span v-show="showStatusWarnMsg" class="errMsg">Please change your status or discard the attempt!</span>
-    <span v-show="showStatusSuccessMsg" class="successMsg">Your status was successfully changed!</span>
-    <span v-show="showStatusErrMsg" class="errMsg">
-      There was an error changing your status, please try again!
-    </span>    
+    <div class="row">
+      <span v-show="showStatusWarnMsg" class="text-warning" id="show-status-warn-msg">
+        Please change your status or discard the attempt!</span>
+      <span v-show="showStatusSuccessMsg" class="text-success" id="show-status-success-msg">
+        Your status was successfully changed!</span>
+      <span v-show="showStatusErrMsg" class="text-danger" id="show-status-err-msg">
+        There was an error changing your status, please try again!
+      </span>
+    </div>
   </section>
   <section class="row" id="page-posts">
     <div class="col-md-6">
@@ -29,6 +34,12 @@
       @click.stop.prevent="cr8Post">Create post</a></h3>
     </div>
     <div v-show="showNewPostForm">
+      <div class="row">
+        <span v-show="showPostWarnMsg" class="text-warning" id="show-postwarn-msg">
+          Please create a post or discard the attempt!</span>
+        <span v-show="showNewPostErrMsg" class="text-danger" id="show-post-err-msg">
+          There was an error uploading your post, please try again!</span>
+      </div>
       <form>
         <div class="form-group">
           <label for="new-post-title">Title</label>
@@ -53,29 +64,45 @@
         @click.stop.prevent="discardPost">Discard!</button>
       </form>
     </div>
-    <span v-show="showErrMsg" class="errMsg">Please create a post or discard the attempt!</span>
-    <span v-show="showPostSuccessMsg" class="successMsg">Your post was successfully uploaded!</span>
-    <span v-show="showPostErrMsg" class="errMsg">There was an error uploading your post, please try again!</span>
   </section>
   <section class="row" id="display-page-posts">
     <ul v-show="showHubPosts" class="list-group">
       <li v-for="item in userPageInfo.userPosts" class="list-group-item">
+        <div class="row">
+          <span v-show="showTagErrMsg" class="text-danger" id="show-tag-err-msg">
+            There was an error tagging your friends, please try later!</span>
+        </div>
         <div class="well">
           <p v-show="item.title">Title: {{item.title}}</p>
           <p v-show="item.text">Story: {{item.text}}</p>
-          <p v-show="item.img">Image: <figure v-show="item.img"><img :src=item.img alt={{item.title}}'s image'></figure></p>
+          <p v-show="item.img">Image: <figure v-show="item.img"><img :src=item.img
+            alt={{item.title}}'s image' class="img-responsive"></figure></p>
           <p v-show="item.taggedFriends">Tagged: <span v-for="item in item.taggedFriends">
             <i>{{item}} </i>
           </span></p>
           <p v-show="item.via">Original Poster: {{item.via}}</p>
           <div class="post-enhancements">
+            <div class="row">
+              <span v-show="showPostLikeErrMsg" class="text-danger"
+              id="show-post-like-err-msg">
+                There was an error performing the 'like', please try again later!</span>
+            </div>
             <span class="fa fa-comments fa-2x" data-toggle="modal" data-target="#commentsModal"
               @click="commentDetails(item)"></span>
-            <span class="fa fa-heart fa-2x" @click.stop.prevent="likePost(item)"></span><span>{{item.likes}}</span>
+            <span class="fa fa-heart fa-2x" @click.stop.prevent="likePost(item)"></span>
+            <span>{{item.likes}}</span>
             <span class="fa fa-tag fa-2x" data-toggle="modal" data-target="#tagModal"
               @click="tagDetails(item)"></span>
           </div>
           <section id="display-post-comments">
+            <div class="row">
+              <span v-show="showCommentErrMsg" class="text-danger"
+              id="show-comment-err-msg">
+                There was an error submitting your comment, please try later!</span>
+              <span v-show="showCommentLikeErrMsg" class="text-danger"
+              id="show-comment-like-err-msg">
+                There was an error performing the 'like', please try later!</span>
+            </div>
             <ul>
               <li v-for="item in item.postsComments">
                 <div class="well">
@@ -83,18 +110,12 @@
                   <span v-show="item.author">Author: {{item.author}}</span>
                 </div>
                 <div class="comment-enhancements">
-                  <span class="fa fa-heart" @click.stop.prevent="likeComment(item)"></span><span>{{item.likes}}</span>
+                  <span class="fa fa-heart" @click.stop.prevent="likeComment(item)"></span>
+                  <span>{{item.likes}}</span>
                 </div>
               </li>
             </ul>
           </section>
-          <span v-show="showCommentSuccessMsg">Your comment was successfully submitted!</span>
-          <span v-show="showCommentErrMsg">There was an error submitting your comment, please try later!</span>
-          <span v-show="showLikeErrMsg">There was an error performing the 'like', please try later!</span>
-          <span v-show="showShareSuccessMsg">Your post was successfully shared!</span>
-          <span v-show="showShareErrMsg">There was an error sharing your post, please try later!</span>
-          <span v-show="showTagSuccessMsg">Your friends were successfully tagged!</span>
-          <span v-show="showTagErrMsg">There was an error tagging your friends, please try later!</span>
         </div>
       </li>
     </ul>
@@ -121,7 +142,9 @@
       </div>
       <div class="modal-footer">
         <div>
-          <span v-show="showCommentsWarning">Please make a comment or discard the action!</span>
+          <span v-show="showCommentsWarning" class="text-warning"
+          id="show-comments-warning">
+            Please make a comment or discard the action!</span>
         </div>
         <button type="submit" class="btn btn-success btn-default" data-dismiss="modal"
         @click.stop.prevent="submitComment">Done!</button>
@@ -152,9 +175,11 @@
         </section>
       </div>
       <div class="modal-footer">
-        <div>
-          <span v-show="showTagWarning">Please select friends to tag or discard the action!</span>
-          <span v-show="showPostOwnerWarning">To tag yor friends you need to share this post first, and then you can tag from your hub!</span>
+        <div class="row">
+          <span v-show="showTagWarning" class="text-warning" id="show-tag-warning">
+            Please select friends to tag or discard the action!</span>
+          <span v-show="showPostOwnerWarning" class="text-warning" id="show-post-owner-warning">
+            To tag yor friends you need to share this post first, and then you can tag from your hub!</span>
         </div>
         <button type="submit" class="btn btn-success btn-default" data-dismiss="modal"
         @click.stop.prevent="submitTag">Done!</button>

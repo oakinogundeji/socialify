@@ -8,6 +8,10 @@
       <div v-for="item in chatMsgs">
         <p>{{item.from}}: {{item.msg}}</p>
       </div>
+      <div class="row">
+        <span v-show="showWarnMsg" class="text-warning" id="chat-show-warn-msg">
+          Please choose a recipient or discard the message!</span>
+      </div>
     </div>
     <form id="chat-box-input" class="form-group"
     @submit.stop.prevent="sendChatMsg">
@@ -21,7 +25,6 @@
         @click.stop.prevent="discardChatMsg">
       </div>
     </form>
-    <span v-show="showWarnMsg" class="errMsg">Please choose a recipient or discard the message!</span>
   </div>
   <div id="chat-status-box" class="col-xs-4">
     <div class="row">

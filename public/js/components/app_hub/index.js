@@ -28,9 +28,9 @@ module.exports = function (jQ, socket, generateRandomFileName) {
         showNewPostForm: false,
         newPostTitle: '',
         newPostContent: '',
-        showErrMsg: false,
-        showPostSuccessMsg: false,
-        showPostErrMsg: false,
+        showPostWarnMsg: false,
+        showViewPostErrMsg: false,
+        showNewPostErrMsg: false,
         changeStatus: false,
         newStatus: '',
         chngStatusBtn: true,
@@ -41,11 +41,10 @@ module.exports = function (jQ, socket, generateRandomFileName) {
         newPostComment: '',
         showCommentsWarning: false,
         commentInfo: {},
-        showCommentSuccessMsg: false,
         showCommentErrMsg: false,
-        showLikeErrMsg: false,
+        showPostLikeErrMsg: false,
+        showCommentLikeErrMsg: false,
         showTagErrMsg: false,
-        showTagSuccessMsg: false,
         showTagWarning: false,
         showPostOwnerWarning: false
       };
@@ -78,7 +77,9 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               this.newStatus = '';
               this.changeStatus = false;
               this.chngStatusBtn = true;
+              jQ('#show-status-success-msg').hide();
               this.showStatusSuccessMsg = true;
+              jQ('#show-status-success-msg').fadeIn(200).fadeOut(3000);
               this.$dispatch('userStatusChanged');
               return socket.emit('userStatusChanged');//required to update feed
             }.bind(this), function (info) {
@@ -86,10 +87,16 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               this.changeStatus = false;
               this.chngStatusBtn = true;
               console.log('info obj', info);
-              return this.showStatusErrMsg = true;
+              jQ('#show-status-err-msg').hide();
+              this.showStatusErrMsg = true;
+              return jQ('#show-status-err-msg').fadeIn(200).fadeOut(3000);
             }.bind(this));
         }
-        return this.showStatusWarnMsg
+        else {
+          jQ('#show-status-warn-msg').hide();
+          this.showStatusWarnMsg = true;
+          return jQ('#show-status-warn-msg').fadeIn(200).fadeOut(3000);
+        }
       },
       discardStatus: function () {
         this.newStatus = '';
@@ -107,13 +114,14 @@ module.exports = function (jQ, socket, generateRandomFileName) {
           xhr.open('POST', imgUploadUrl);
           xhr.addEventListener('load', function (res) {
             console.log('response from new post img submission', res);
-            this.showNewPostForm = false;
-            return this.showPostSuccessMsg = true;
+            return this.showNewPostForm = false;
           }.bind(this));
           xhr.addEventListener('error', function (info) {
+            console.log('info obj', info);
             this.showNewPostForm = false;
-            this.showPostErrMsg = true;
-            return console.log('info obj', info);
+            jQ('#show-post-err-msg').hide();
+            this.showNewPostErrMsg = true;
+            return jQ('#show-post-err-msg').fadeIn(200).fadeOut(3000);
           }.bind(this));
           xhr.send(form);
         return console.log('data sent', form);
@@ -148,19 +156,24 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               var postID = res.data;
               console.log('post id for new post', postID);
               this.showNewPostForm = false;
-              this.showPostSuccessMsg = true;
               this.$dispatch('newPostCreated', postTitle);
-              return socket.emit('newPostCreated', this.userProfileInfo.email, postTitle, postID);//required to update feed
+              return socket.emit('newPostCreated', this.userProfileInfo.email, postTitle, postID);
+              //required to update feed
             }.bind(this), function (info) {
-              this.showNewPostForm = false;
               console.log('info obj', info);
-              return this.showPostErrMsg = true;
+              jQ('#show-post-err-msg').hide();
+              this.showNewPostErrMsg = true;
+              return jQ('#show-post-err-msg').fadeIn(200).fadeOut(3000);
             }.bind(this));
           //reset input fields
           this.newPostTitle = this.newPostContent = this.$els.postImg.value = '';
           return console.log('new post data sent to server', data);
         }
-        return this.showErrMsg = true;
+        else {
+          jQ('#show-postwarn-msg').hide();
+          this.showPostWarnMsg = true;
+          return jQ('#show-postwarn-msg').fadeIn(200).fadeOut(3000);
+        }
       },
       discardPost: function () {
         this.newPostTitle = this.newPostContent = this.$els.postImg.value = '';
@@ -186,7 +199,9 @@ module.exports = function (jQ, socket, generateRandomFileName) {
           }.bind(this), function (info) {
             console.log('info obj', info);
             console.log('failed to increase like count of ', item.title);
-            return this.showLikeErrMsg = true;
+            jQ('#show-post-like-err-msg').hide();
+            this.showPostLikeErrMsg = true;
+            return jQ('#show-post-like-err-msg').fadeIn(200).fadeOut(3000);
           }.bind(this));
       },
       commentDetails: function (post) {
@@ -223,7 +238,6 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               console.log('response from new comment submission', res);
               var commentID = res.data;
               this.newPostComment = '';
-              this.showCommentSuccessMsg = true;
               console.log('postID', self.commentInfo.postID);
               socket.emit('getUserPostsCommentsInfo', self.userPageInfo.userPosts);
               socket.emit('madeComment', postTitle, postID, commentID)//required to update feed
@@ -232,12 +246,18 @@ module.exports = function (jQ, socket, generateRandomFileName) {
             }.bind(this), function (info) {
               this.newPostComment = '';
               console.log('info obj', info);
-              return this.showCommentErrMsg = true;
+              jQ('#show-comment-err-msg').hide();
+              this.showCommentErrMsg = true;
+              return jQ('#show-comment-err-msg').fadeIn(200).fadeOut(3000);
             }.bind(this));
           jQ('#closeModal').trigger('click');
           return console.log('submit comments btn clicked');
         }
-        return this.showCommentsWarning = true;
+        else {
+          jQ('#show-comments-warning').hide();
+          this.showCommentsWarning = true;
+          return jQ('#show-comments-warning').fadeIn(200).fadeOut(3000);
+        }
       },
       discardComment: function () {
         this.newPostComment = '';
@@ -266,7 +286,9 @@ module.exports = function (jQ, socket, generateRandomFileName) {
           }.bind(this), function (info) {
             console.log('info obj', info);
             console.log('failed to increase like count of ', comment.commentID);
-            return this.showLikeErrMsg = true;
+            jQ('#show-comment-like-err-msg').hide();
+            this.showCommentLikeErrMsg = true;
+            return jQ('#show-comment-like-err-msg').fadeIn(200).fadeOut(3000);
           }.bind(this));
       },
       tagFriend: function (friend, e) {
@@ -366,16 +388,26 @@ module.exports = function (jQ, socket, generateRandomFileName) {
               }.bind(this), function (info) {
                 console.log('info obj', info);
                 console.log('failed to tag friends for post ', postID);
-                return this.showTagErrMsg = true;
+                jQ('#show-tag-err-msg').hide();
+                this.showTagErrMsg = true;
+                return jQ('#show-tag-err-msg').fadeIn(200).fadeOut(3000);
               }.bind(this));
               this.taggedFriendsList = [];
               jQ('#tagFriends input[type="checkbox"]').attr('checked', false);
               this.$els.tagAllFriendsBtn.textContent = 'Tag all your friends';
               return jQ('#closeTagModal').trigger('click');
           }
-          return this.showTagWarning = true;
+          else {
+            jQ('#show-tag-warning').hide();
+            this.showTagWarning = true;
+            return jQ('#show-tag-warning').fadeIn(200).fadeOut(3000);
+          }
         }
-        return this.showPostOwnerWarning = true;
+        else {
+          jQ('#show-post-owner-warning').hide();
+          this.showPostOwnerWarning = true;
+          return jQ('#show-post-owner-warning').fadeIn(200).fadeOut(3000);
+        }
       },
       discardTag: function () {
         this.taggedFriendsList = [];

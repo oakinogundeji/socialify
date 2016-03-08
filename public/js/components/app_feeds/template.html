@@ -1,6 +1,7 @@
 <section id="app-feeds" class="col-xs-12 col-md-5">
   <div id="user-feed" class="well">
-    <p>Most recent activity: <a href="" @click.stop.prevent="getActivity" v-el:activity-link>{{userActivity[0]}}</a></p>
+    <p>Most recent activity: <a href="" @click.stop.prevent="getActivity"
+      v-el:activity-link>{{userActivity[0]}}</a></p>
     <div class="pull-right">
       <a href="" class="btn btn-success btn-default"
       @click.stop.prevent="getOtherActivity">View other activity</a>

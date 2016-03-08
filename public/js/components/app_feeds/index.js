@@ -310,7 +310,8 @@ module.exports = function (jQ, socket, userActivityData) {
             post's comments arry on the backend and the user's activity feed
             but we need to update the owner of the post*/
             this.$dispatch('sharedPost', postTitle);
-            return socket.emit('sharedPost', this.email, postTitle, newPostID, postOwner);//required to update feed
+            return socket.emit('sharedPost', this.email, postTitle, newPostID, postOwner);
+            //required to update feed
           }.bind(this), function (info) {
             return console.log('info obj', info);
           }.bind(this));
@@ -342,7 +343,8 @@ module.exports = function (jQ, socket, userActivityData) {
               the commenter's post array, all that's needed is to update the
               post's comments arry on the backend and the user's activity feed
               but we need to update the owner of the post*/
-              socket.emit('madeComment', postTitle, postID, commentID);//required to update feed
+              socket.emit('madeComment', postTitle, postID, commentID);
+              //required to update feed
               return this.$dispatch('commentOnPost', postTitle);
             }.bind(this), function (info) {
               return console.log('info obj', info);

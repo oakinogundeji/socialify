@@ -1,7 +1,8 @@
 <!--start app-contacts component core template-->
 <section id="app-contacts" class="col-xs-8">
   <div class="row">
-    <span v-show="!hasFriends" class="pull-right">You have no friends to show</span>
+    <span v-show="showFriendsListErrSpan" class="pull-right errMsg"
+    id="show-friends-list-err-span">You have no friends to show</span>
   </div>
   <!--start control btns-->
   <div class="row" id="app-contact-triggers">
@@ -10,12 +11,14 @@
       <a class="btn btn-primary btn-default"
       @click.stop.prevent="enableFriendsList" v-el:friend-list-btn>Show friends list...</a>
   </div>
-  <span id="search-4-friends-Modal-Btn" data-toggle="modal"
-  data-target="#search-4-friends-Modal"></span>
-  <span id="show-friends-list-Modal-Btn" data-toggle="modal"
-  data-target="#show-friends-list-Modal"></span>
-  <span id="show-friends-list-search-results-Modal-Btn" data-toggle="modal"
-  data-target="#show-friends-list-search-results-Modal"></span>
+  <div class="row">
+    <span id="search-4-friends-Modal-Btn" data-toggle="modal"
+    data-target="#search-4-friends-Modal"></span>
+    <span id="show-friends-list-Modal-Btn" data-toggle="modal"
+    data-target="#show-friends-list-Modal"></span>
+    <span id="show-friends-list-search-results-Modal-Btn" data-toggle="modal"
+    data-target="#show-friends-list-search-results-Modal"></span>
+  </div>
   <!--end control btns-->
   <!--start search for friends form-->
   <section id="friends-search" v-show="showSearch">
@@ -43,8 +46,12 @@
     </form>
   </section>
   <!--end search for friends form-->
-  <span v-show="showSearchResultMsg" class="infoMsg">Friend search result: {{searchResultMsg}}</span>
-  <span v-show="showErrMsg" class="errMsg">Please create a search or discard the attempt!</span>
+  <div class="row">
+    <span v-show="showSearchResultMsg" class="infoMsg" id="search-result-msg">
+      Friend search result: {{searchResultMsg}}</span>
+    <span v-show="showErrMsg" class="text-warning" id="show-search-err-msg">
+      Please create a search or discard the attempt!</span>
+  </div>
   <!--start show friends list-->
   <section id="show-friends-list">
     <!--start search friends list-->
@@ -71,11 +78,18 @@
         <button type="submit" class="btn btn-danger btn-default"
         @click.stop.prevent="discardFriendsSearch">Discard!</button>
       </form>
-      <span v-show="showFriendsListMsg">{{friendsListMsg}}</span>
+      <div class="row">
+        <span v-show="showFriendsListMsg" class="text-danger" id="show-friends-list-msg">
+          {{friendsListMsg}}</span>
+      </div>
     </div>
     <!--end search friends list-->
-    <span v-show="showFriendsErrMsg">There was an error showing your friends, please try later!</span>
-    <span v-show="showRemoveErrMsg">There was an error removing your friend, please try later!</span>
+    <div class="row">
+      <span v-show="showFriendsErrMsg" class="text-danger">
+        There was an error showing your friends, please try later!</span>
+      <span v-show="showRemoveErrMsg" class="text-danger">
+        There was an error removing your friend, please try later!</span>
+    </div>
   </section>
   <!--end show friends list-->
 </section>
@@ -95,7 +109,7 @@ aria-labelledby="search4FriendsModalLabel">
         <span v-show="showLoading">Loading...</span>
         <ul class="list-group">
           <li v-for="item in resultsList" class="list-group-item">
-            <figure><img :src=item.profilePhoto
+            <figure><img :src=item.profilePhoto class="img-responsive"
               alt="{{item.firstName}}'s photo'">
             </figure>
             <p>{{item.firstName}} {{item.lastName}}</p>
@@ -103,7 +117,10 @@ aria-labelledby="search4FriendsModalLabel">
             <div><a class="btn btn-success btn-default"
               @click.stop.prevent="addFriend(item)">Add Friend!</a>
             </div>
-            <span v-show="showErrMsg">There was an error adding your friend, please try later!</span>
+            <div class="row">
+              <span v-show="showErrMsg" class="text-danger">
+                There was an error adding your friend, please try later!</span>
+            </div>
           </li>
         </ul>
       </div>
@@ -156,8 +173,11 @@ aria-labelledby="showFriendsListModalLabel">
         @click.stop.prevent="showfriendListSearch">Search your friends list...</a>
         <button class="btn btn-primary btn-default"
         @click.stop.prevent="hideFriendsList">Done</button>
-        <span v-show="showViewHubErrMsg">There was an error processing the request,
-        please try later!</span>
+        <div class="row">
+          <span v-show="showViewHubErrMsg" class="text-danger"
+          id="show-view-hub-err-msg">
+            There was an error processing the request, please try later!</span>
+        </div>
       </div>
     </div>
   </div>
@@ -179,7 +199,7 @@ role="dialog" aria-labelledby="showFriendsListSearchResultsModalLabel">
         <div>
           <ul class="list-group">
             <li v-for="item in friendsListArray" class="list-group-item">
-              <figure><img :src=item.profilePhoto
+              <figure><img :src=item.profilePhoto class="img-responsive"
                 alt="{{item.firstName}}'s photo'">
               </figure>
               <p>{{item.firstName}} {{item.lastName}}</p>

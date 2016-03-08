@@ -17,6 +17,7 @@ module.exports = function (jQ, socket) {
       sendChatMsg: function () {
         if(this.newMsg.trim() && this.chatTarget.trim()) {
           this.showWarnMsg = false;
+          jQ('#chat-show-warn-msg').hide();
           console.log('new msg', this.newMsg);
           this.newChatMsg = {
             from: this.userProfileInfo.email,
@@ -27,7 +28,9 @@ module.exports = function (jQ, socket) {
           this.newMsg = '';
           return socket.emit('newChatMsg', this.newChatMsg);
         }
-        return this.showWarnMsg = true;
+        jQ('#chat-show-warn-msg').hide();
+        this.showWarnMsg = true;
+        return jQ('#chat-show-warn-msg').fadeIn(200).fadeOut(3000);
       },
       setChatTarget: function (friend) {
         console.log('chat target is ', friend.email);
