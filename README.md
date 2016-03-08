@@ -12,8 +12,8 @@ Socialify includes all the generic features of a social networking app, such as 
 ##Modifications
 Socialify is built such that it can be easily modified if you have experience with Express, Socket.io, Passport.js and Vue.js(frontend).
 
-##TODO
-Tests... on the way ASAP!
+##Tests
+npm test
 
 ##License
 MIT
